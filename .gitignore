@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+.next/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Prisma
+backend/prisma/migrations/dev.db
+
+# Local dev Postgres cluster (see backend/README.md) — never committed
+backend/.pgdata/
+backend/.pgpwfile
+backend/server.pid
+
+# Flutter / Dart (future mobile/ directory)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+/mobile/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Coverage
+coverage/

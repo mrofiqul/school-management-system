@@ -1,0 +1,402 @@
+<title>Campus Specification</title>
+<style>
+  :root{
+    --paper:#F5F3EE; --panel:#FBFAF6; --ink:#20262B; --ink-soft:#5B6269; --ink-faint:#8B8F8A;
+    --line:#D9D4C7; --line-strong:#C3BCAA;
+    --accent:#A8571F; --accent-soft:#E9DCC3;
+    --teal:#2F6E68; --teal-soft:#DCE8E5;
+    --success:#3C7A5D; --success-soft:#DCEAE1;
+    --warning:#A3791F; --warning-soft:#EFE6CB;
+    --danger:#AE3B32; --danger-soft:#F3DAD6;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    --serif:"Newsreader",Georgia,serif;
+    --sans:"Public Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#15181A; --panel:#1B1F22; --ink:#EAE7DE; --ink-soft:#A8ADA8; --ink-faint:#6E7470;
+      --line:#2E3336; --line-strong:#3D4448;
+      --accent:#DE9254; --accent-soft:#3A2C1C;
+      --teal:#5CAAA1; --teal-soft:#1E2E2C;
+      --success:#5FAE84; --success-soft:#1E2E26;
+      --warning:#D9A94A; --warning-soft:#332B17;
+      --danger:#E07268; --danger-soft:#3A211D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#15181A; --panel:#1B1F22; --ink:#EAE7DE; --ink-soft:#A8ADA8; --ink-faint:#6E7470;
+    --line:#2E3336; --line-strong:#3D4448;
+    --accent:#DE9254; --accent-soft:#3A2C1C;
+    --teal:#5CAAA1; --teal-soft:#1E2E2C;
+    --success:#5FAE84; --success-soft:#1E2E26;
+    --warning:#D9A94A; --warning-soft:#332B17;
+    --danger:#E07268; --danger-soft:#3A211D;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--paper); color:var(--ink); font-family:var(--sans); margin:0;}
+  code,.mono{font-family:var(--mono);}
+  a{color:var(--accent);}
+  p{line-height:1.65;}
+  h1,h2,h3{text-wrap:balance;}
+
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  .toc{
+    width:230px; flex:none; position:sticky; top:0; height:100vh; overflow-y:auto;
+    padding:40px 18px 40px 28px; border-right:1px solid var(--line);
+  }
+  .toc .brand{font-family:var(--serif); font-weight:600; font-size:17px; margin-bottom:4px;}
+  .toc .brand-sub{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); margin-bottom:22px; display:block;}
+  .toc ol{list-style:none; margin:0; padding:0; counter-reset:toc;}
+  .toc li{counter-increment:toc; margin-bottom:2px;}
+  .toc a{display:block; padding:6px 10px; border-radius:5px; font-size:12.5px; color:var(--ink-soft); text-decoration:none;}
+  .toc a:hover{background:var(--panel); color:var(--ink);}
+  .toc a::before{content:counter(toc,decimal-leading-zero) "  "; font-family:var(--mono); color:var(--ink-faint); font-size:10.5px;}
+
+  main{flex:1; min-width:0; padding:40px 48px 120px;}
+
+  .doc-head{border-bottom:2px solid var(--ink); padding-bottom:22px; margin-bottom:10px;}
+  .doc-head .eyebrow{display:block; font-family:var(--mono); font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;}
+  .doc-head h1{font-family:var(--serif); font-weight:600; font-size:44px; margin:0 0 10px; letter-spacing:-.01em;}
+  .doc-head .scope{max-width:68ch; color:var(--ink-soft); font-size:15.5px; margin:0 0 18px;}
+  .doc-meta{display:flex; gap:24px; flex-wrap:wrap; font-family:var(--mono); font-size:11.5px; color:var(--ink-faint);}
+  .doc-meta b{color:var(--ink);}
+
+  section{margin:64px 0 0; scroll-margin-top:24px;}
+  section h2{font-family:var(--serif); font-size:27px; font-weight:600; margin:0 0 6px;}
+  section .sec-eyebrow{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:8px;}
+  section > p.lede{color:var(--ink-soft); max-width:74ch; font-size:15px; margin:0 0 24px;}
+  h3{font-size:17px; font-weight:600; margin:28px 0 10px;}
+
+  .role-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:20px 0;}
+  .role-card{border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:16px 18px;}
+  .role-card .r-title{font-weight:700; font-size:13.5px; margin-bottom:6px;}
+  .role-card .r-desc{font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
+
+  .phase-list{display:grid; gap:12px; margin:20px 0;}
+  .phase{display:flex; gap:16px; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:14px 18px;}
+  .phase .p-num{font-family:var(--mono); font-size:12px; color:var(--accent); font-weight:700; flex:none; width:70px;}
+  .phase .p-body b{display:block; font-size:13.5px; margin-bottom:3px;}
+  .phase .p-body span{font-size:12.5px; color:var(--ink-soft);}
+
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:16px 0;}
+  th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:600; padding:0 14px 9px 0; border-bottom:1px solid var(--line-strong);}
+  td{padding:9px 14px 9px 0; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td.mono, td code{font-family:var(--mono); font-size:12px;}
+
+  .badge{font-family:var(--mono); font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; display:inline-block; margin-right:3px;}
+  .m-get{background:var(--teal-soft); color:var(--teal);}
+  .m-post{background:var(--success-soft); color:var(--success);}
+  .m-patch{background:var(--warning-soft); color:var(--warning);}
+  .m-delete{background:var(--danger-soft); color:var(--danger);}
+  .role{font-family:var(--mono); font-size:10px; border:1px solid var(--line-strong); color:var(--ink-soft); padding:1px 5px; border-radius:3px; margin-right:2px; display:inline-block;}
+  .role-sa{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
+
+  .diagram-box{border:1px solid var(--line-strong); background:var(--panel); border-radius:6px; padding:26px 20px 16px; position:relative; margin:22px 0;}
+  .diagram-box svg{width:100%; height:auto; display:block; color:var(--ink);}
+  .diagram-box .tag{position:absolute; top:-10px; left:18px; background:var(--paper); border:1px solid var(--line-strong); padding:2px 9px; font-family:var(--mono); font-size:10px; color:var(--accent);}
+  figcaption{font-size:12.5px; color:var(--ink-soft); margin-top:8px;}
+
+  .status-table td.status{font-weight:700;}
+  .st-open{color:var(--warning);}
+  .st-decided{color:var(--success);}
+
+  .artifact-list{list-style:none; margin:16px 0; padding:0; display:grid; gap:10px;}
+  .artifact-list li{border:1px solid var(--line); background:var(--panel); border-radius:7px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
+  .artifact-list .a-name{font-weight:700; font-size:13.5px;}
+  .artifact-list .a-desc{font-size:12px; color:var(--ink-soft);}
+
+  .note{background:var(--teal-soft); border-left:3px solid var(--teal); padding:12px 16px; border-radius:2px; font-size:13px; color:var(--ink-soft); margin:16px 0;}
+  .warn{background:var(--warning-soft); border-left:3px solid var(--warning); padding:12px 16px; border-radius:2px; font-size:13px; color:var(--ink-soft); margin:16px 0;}
+  .warn b{color:var(--ink);}
+
+  ul.plain{margin:10px 0; padding-left:20px;}
+  ul.plain li{font-size:13.5px; color:var(--ink-soft); margin-bottom:7px; line-height:1.55;}
+  ul.plain code{color:var(--ink);}
+
+  footer{margin-top:70px; padding-top:20px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-faint); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+
+  @media (max-width:860px){
+    .shell{flex-direction:column;}
+    .toc{position:static; width:auto; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:32px 20px 80px;}
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="shell">
+  <nav class="toc">
+    <div class="brand">◆ Campus</div>
+    <span class="brand-sub">Specification v1</span>
+    <ol>
+      <li><a href="#overview">Overview &amp; scope</a></li>
+      <li><a href="#roles">User roles</a></li>
+      <li><a href="#modules">Feature modules</a></li>
+      <li><a href="#phasing">Phasing</a></li>
+      <li><a href="#data-model">Data model</a></li>
+      <li><a href="#api">API reference</a></li>
+      <li><a href="#apps">Applications &amp; screens</a></li>
+      <li><a href="#nfr">Non-functional &amp; open items</a></li>
+      <li><a href="#stack">Tech stack &amp; conventions</a></li>
+      <li><a href="#artifacts">Reference artifacts</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="doc-head">
+      <span class="eyebrow">School Management SaaS</span>
+      <h1>Campus Specification</h1>
+      <p class="scope">The complete product and technical specification for a multi-school management platform serving Bangladesh/South Asia — Android and web, built on Flutter, NestJS, and PostgreSQL. This document is the single reference the codebase is built from.</p>
+      <div class="doc-meta">
+        <span>Rev <b>v1</b></span>
+        <span>Date <b>2026-10-04</b></span>
+        <span>Scope <b>Multi-tenant SaaS</b></span>
+        <span>Stack <b>Flutter · NestJS · PostgreSQL</b></span>
+        <span>Region <b>Bangladesh / South Asia</b></span>
+      </div>
+    </div>
+
+    <!-- ============ OVERVIEW ============ -->
+    <section id="overview">
+      <span class="sec-eyebrow">01</span>
+      <h2>Overview &amp; scope</h2>
+      <p class="lede">A unified platform that digitizes day-to-day school operations — admissions, attendance, academics, fees, communication, reporting — sold as a subscription to many schools rather than built for one.</p>
+      <p>Four audiences are served directly: the <b>Super Admin</b> (the platform owner, managing every school as a tenant), the <b>School Admin</b> (one school's full control), the <b>Teacher</b>, and the <b>Student/Parent</b> pair sharing one mobile app with role-conditional navigation.</p>
+      <div class="note">Scope was deliberately narrowed to <b>multi-school SaaS</b> over a single-school build, because the tenancy and billing concerns it adds (Super Admin role, subscription plans, per-tenant branding) are far cheaper to design in from the start than to retrofit later.</div>
+    </section>
+
+    <!-- ============ ROLES ============ -->
+    <section id="roles">
+      <span class="sec-eyebrow">02</span>
+      <h2>User roles</h2>
+      <p class="lede">Six roles, five of which are scoped to exactly one school; the Super Admin is scoped to none.</p>
+      <div class="role-grid">
+        <div class="role-card"><div class="r-title">Super Admin</div><div class="r-desc">Platform owner. Onboards schools, manages subscription plans and platform billing, platform-wide analytics. No <code>school_id</code>.</div></div>
+        <div class="role-card"><div class="r-title">School Admin / Principal</div><div class="r-desc">Full control of one school — classes, staff, fees, policies, reports.</div></div>
+        <div class="role-card"><div class="r-title">Teacher</div><div class="r-desc">Attendance, gradebook, homework, timetable, messaging, leave requests.</div></div>
+        <div class="role-card"><div class="r-title">Student</div><div class="r-desc">Views timetable, homework, grades, attendance, fee status, notices. Read-only on fees.</div></div>
+        <div class="role-card"><div class="r-title">Parent</div><div class="r-desc">Monitors one or more children, pays fees, messages teachers, receives alerts.</div></div>
+        <div class="role-card"><div class="r-title">Accountant / Staff</div><div class="r-desc">Optional role sharing School Admin's fee endpoints — collection, payroll, inventory.</div></div>
+      </div>
+    </section>
+
+    <!-- ============ MODULES ============ -->
+    <section id="modules">
+      <span class="sec-eyebrow">03</span>
+      <h2>Feature modules</h2>
+      <p class="lede">Grouped the way the data model and API group them — not by department, but by what shares a foreign key.</p>
+      <h3>Academic</h3>
+      <ul class="plain">
+        <li>Admission &amp; enrollment, with document uploads</li>
+        <li>Class / section management, subject mapping</li>
+        <li>Timetable builder with conflict detection</li>
+        <li>Attendance — daily and period-wise, teacher-marked, offline-queued</li>
+        <li>Gradebook &amp; exam management — marks entry, computed report cards, grading scale</li>
+        <li>Homework / assignments — post, submit, grade</li>
+        <li>Syllabus tracker, study materials, notice board</li>
+      </ul>
+      <h3>Administrative</h3>
+      <ul class="plain">
+        <li>Staff management — profile, leave, payroll-lite</li>
+        <li>Fee management — per-class structure, invoices, online payment, receipts, dues</li>
+        <li>Transport management — routes, vehicles, driver info <span class="role">Phase 3</span></li>
+        <li>Library management — catalog, issue/return, fines <span class="role">Phase 3</span></li>
+      </ul>
+      <h3>Communication</h3>
+      <ul class="plain">
+        <li>Push, SMS, and email alerts — fee due, exam results, notices</li>
+        <li>In-app messaging — teacher ↔ parent only</li>
+        <li>Events / academic calendar</li>
+      </ul>
+      <h3>Platform (Super Admin only)</h3>
+      <ul class="plain">
+        <li>Tenant onboarding — self-serve or sales-assisted</li>
+        <li>Subscription &amp; plan management, usage-limit enforcement</li>
+        <li>Per-tenant branding on report cards, receipts, the parent app view</li>
+        <li>Platform billing, separate in the data model from school-to-parent fee billing</li>
+      </ul>
+    </section>
+
+    <!-- ============ PHASING ============ -->
+    <section id="phasing">
+      <span class="sec-eyebrow">04</span>
+      <h2>Phasing</h2>
+      <p class="lede">Dependency order, not feature priority — each phase is buildable on what the previous one shipped.</p>
+      <div class="phase-list">
+        <div class="phase"><span class="p-num">PHASE 1</span><div class="p-body"><b>MVP</b><span>Tenant onboarding (manual) → School setup → Attendance → Timetable → Basic gradebook → Notices → Student/Parent view-only login. Fees tracked manually, no online payment yet.</span></div></div>
+        <div class="phase"><span class="p-num">PHASE 2</span><div class="p-body"><b>Payments &amp; engagement</b><span>SSLCommerz/bKash/Nagad fee payments, homework/assignments, exam &amp; report cards, SMS + push notifications, subscription billing enforcement.</span></div></div>
+        <div class="phase"><span class="p-num">PHASE 3</span><div class="p-body"><b>Operations</b><span>Transport, library, HR/payroll-lite, per-tenant branding, analytics dashboards, self-serve signup.</span></div></div>
+        <div class="phase"><span class="p-num">PHASE 4</span><div class="p-body"><b>Scale</b><span>iOS app, biometric/QR attendance, at-risk student flagging, performance analytics.</span></div></div>
+      </div>
+    </section>
+
+    <!-- ============ DATA MODEL ============ -->
+    <section id="data-model">
+      <span class="sec-eyebrow">05</span>
+      <h2>Data model</h2>
+      <p class="lede">Four domains sit on one tenancy &amp; identity foundation. Every table outside the platform-billing pair carries <code>school_id</code>, enforced server-side — never trusted from a client.</p>
+
+      <div class="diagram-box">
+        <span class="tag">FIG. 00</span>
+        <svg viewBox="0 0 900 330" role="img" aria-label="Four domains — academics and attendance, exams and assignments, fees and billing, and communication — all sit on one tenancy and identity foundation, connected to it by school_id.">
+          <rect x="50" y="30" width="800" height="56" rx="2" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="450" y="54" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="currentColor" font-weight="600">TENANCY &amp; IDENTITY</text>
+          <text x="450" y="72" text-anchor="middle" font-family="Public Sans" font-size="11.5" fill="var(--ink-soft)">School · User · role profiles · subscription plan</text>
+          <g font-family="IBM Plex Mono" font-size="12.5" font-weight="600">
+            <rect x="50" y="150" width="170" height="64" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <text x="135" y="176" text-anchor="middle" fill="currentColor">ACADEMICS &amp;</text>
+            <text x="135" y="192" text-anchor="middle" fill="currentColor">ATTENDANCE</text>
+            <rect x="260" y="150" width="170" height="64" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <text x="345" y="176" text-anchor="middle" fill="currentColor">EXAMS &amp;</text>
+            <text x="345" y="192" text-anchor="middle" fill="currentColor">ASSIGNMENTS</text>
+            <rect x="470" y="150" width="170" height="64" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <text x="555" y="176" text-anchor="middle" fill="currentColor">FEES &amp;</text>
+            <text x="555" y="192" text-anchor="middle" fill="currentColor">BILLING</text>
+            <rect x="680" y="150" width="170" height="64" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <text x="765" y="176" text-anchor="middle" fill="currentColor">COMMUNI-</text>
+            <text x="765" y="192" text-anchor="middle" fill="currentColor">CATION</text>
+          </g>
+          <defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+          <g stroke="currentColor" stroke-width="1.1" marker-end="url(#arrow)">
+            <line x1="135" y1="150" x2="135" y2="90"/><line x1="345" y1="150" x2="345" y2="90"/>
+            <line x1="555" y1="150" x2="555" y2="90"/><line x1="765" y1="150" x2="765" y2="90"/>
+          </g>
+          <rect x="50" y="260" width="800" height="40" rx="2" fill="none" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+          <text x="450" y="284" text-anchor="middle" font-family="Public Sans" font-size="12" fill="var(--ink-faint)">Transport &amp; Library join the same pattern when Phase 3 starts — not modeled yet</text>
+        </svg>
+        <figcaption>Module map. Each cluster below is detailed in the Campus Schema artifact (see Reference Artifacts).</figcaption>
+      </div>
+
+      <h3>Entity reference</h3>
+      <table>
+        <thead><tr><th>Entity</th><th>Key fields</th><th>Relationships</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">School</td><td class="mono">id, plan_id, name, status</td><td>belongs to SubscriptionPlan; has many Users</td></tr>
+          <tr><td class="mono">User</td><td class="mono">id, school_id, email, role, status</td><td>extends to one of StaffProfile / StudentProfile / ParentProfile</td></tr>
+          <tr><td class="mono">ParentStudent</td><td class="mono">parent_id, student_id, relation</td><td>many-to-many junction, multiple guardians per student</td></tr>
+          <tr><td class="mono">AcademicYear → Class → Section</td><td class="mono">label, name, sort_order</td><td>Section is the real teaching unit; Class groups Sections</td></tr>
+          <tr><td class="mono">ClassSubject</td><td class="mono">class_id, subject_id, teacher_id</td><td>where a teacher is actually assigned</td></tr>
+          <tr><td class="mono">TimetableSlot</td><td class="mono">section_id, class_subject_id, day, time, room</td><td>Attendance keys off this, not just a date</td></tr>
+          <tr><td class="mono">AttendanceRecord</td><td class="mono">student_id, timetable_slot_id, status</td><td>period-wise, not just daily</td></tr>
+          <tr><td class="mono">Exam → ExamSchedule → Mark</td><td class="mono">max_marks, marks_obtained</td><td>max marks live on the schedule, not the subject</td></tr>
+          <tr><td class="mono">Assignment → AssignmentSubmission</td><td class="mono">due_on, file_url, marks</td><td>submission exists before grading — marks nullable</td></tr>
+          <tr><td class="mono">FeeStructure → StudentInvoice → StudentPayment</td><td class="mono">amount_bdt, gateway, status</td><td>school bills parent — kept separate from platform billing</td></tr>
+          <tr><td class="mono">SubscriptionPlan → PlatformInvoice → PlatformPayment</td><td class="mono">tier, billing_period</td><td>platform bills school — never crosses into student billing</td></tr>
+          <tr><td class="mono">Notice / Message / NotificationLog</td><td class="mono">audience_scope, channel, delivery_status</td><td>fan-out happens at read time, not fan-out writes</td></tr>
+        </tbody>
+      </table>
+      <ul class="plain">
+        <li>Primary keys are <code>uuid</code>, generated server-side. Timestamps are <code>timestamptz</code> in UTC. Money is <code>numeric(10,2)</code> in BDT, never float.</li>
+        <li>Junction tables use a surrogate <code>id</code> plus a unique constraint on the pair, rather than a composite primary key.</li>
+      </ul>
+    </section>
+
+    <!-- ============ API ============ -->
+    <section id="api">
+      <span class="sec-eyebrow">06</span>
+      <h2>API reference</h2>
+      <p class="lede">REST, versioned under <code>/v1</code>. A bearer JWT carries <code>sub</code>, <code>school_id</code>, <code>role</code>, <code>exp</code> — <code>school_id</code> is read from the token only, never from a request body or query string.</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Who</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/auth/login</td><td>public</td><td>Issues access + refresh token</td></tr>
+          <tr><td><span class="badge m-get">GET</span></td><td class="mono">/platform/schools</td><td><span class="role role-sa">SA</span></td><td>List tenants</td></tr>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/platform/schools</td><td><span class="role role-sa">SA</span></td><td>Onboard a school + first admin</td></tr>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/students</td><td><span class="role">AD</span></td><td>Admit — creates User + StudentProfile</td></tr>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/attendance</td><td><span class="role">TC</span></td><td>Bulk-mark one timetable slot</td></tr>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/exam-schedules/:id/marks</td><td><span class="role">TC</span></td><td>Bulk marks entry</td></tr>
+          <tr><td><span class="badge m-get">GET</span></td><td class="mono">/students/:id/report-card</td><td><span class="role">AD</span> <span class="role">PA</span> <span class="role">ST</span></td><td>Computed, never stored</td></tr>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/invoices/:id/checkout</td><td><span class="role">PA</span></td><td>Start hosted gateway payment</td></tr>
+          <tr><td><span class="badge m-post">POST</span></td><td class="mono">/payments/webhook/:gateway</td><td>gateway</td><td>Signed server-to-server settlement</td></tr>
+          <tr><td><span class="badge m-get">GET</span> <span class="badge m-post">POST</span></td><td class="mono">/notices</td><td><span class="role">AD</span> <span class="role">TC</span></td><td>Read for all; post for staff</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:var(--ink-soft);">Full 45-endpoint reference across 8 resource groups — Auth, Platform, Tenancy &amp; People, Academics, Attendance, Exams/Grades/Assignments, Fees &amp; Billing, Communication — lives in the Campus API artifact (see Reference Artifacts). List responses wrap as <code>{"{"}  data, meta: {"{"} page, per_page, total {"}"} {"}"}</code>; errors as <code>{"{"}  error: {"{"} code, message, status {"}"} {"}"}</code>.</p>
+    </section>
+
+    <!-- ============ APPS ============ -->
+    <section id="apps">
+      <span class="sec-eyebrow">07</span>
+      <h2>Applications &amp; screens</h2>
+      <p class="lede">Four surfaces, one backend. Each is fully sketched as an interactive artifact — this section summarizes what each one covers.</p>
+
+      <h3>Campus Owner Console — web, Super Admin</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft);">Platform-wide Overview (growth, MRR, signups), Schools (list + usage/plan detail panel), Plan tiers, cross-tenant Billing, Audit Log.</p>
+
+      <h3>Campus School Console — web, School Admin</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft);">Dashboard (today's attendance, fee collection, next exam), Students, Staff, Timetable grid, Fees, Notices. White-labeled per school.</p>
+
+      <h3>Campus App — Flutter, Student &amp; Parent</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft);">One app, role-conditional bottom nav: Student gets 4 tabs (no Messages — the endpoint itself denies that role), Parent gets 5. Home surfaces actionable cards rather than a menu; Assignment Detail is one route branching on role, not two screens.</p>
+
+      <h3>Campus App — Flutter, Teacher</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft);">Attendance marking (bulk, three-way P/A/L toggle, offline-queued) and marks entry are the two highest-frequency screens — both designed around one repeated gesture rather than a form per student.</p>
+    </section>
+
+    <!-- ============ NFR ============ -->
+    <section id="nfr">
+      <span class="sec-eyebrow">08</span>
+      <h2>Non-functional requirements &amp; open items</h2>
+      <p class="lede">What the product and API specs don't cover yet. None of these block starting the backend — they're tracked here so they don't get lost once code exists.</p>
+      <table class="status-table">
+        <thead><tr><th>Area</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Multi-tenancy &amp; auth</td><td class="status st-decided">Decided</td><td>Shared schema, school_id scoping enforced server-side; JWT + refresh tokens</td></tr>
+          <tr><td>Password hashing</td><td class="status st-decided">Decided</td><td>bcrypt, cost factor 12</td></tr>
+          <tr><td>Rate limiting</td><td class="status st-open">Open</td><td>Per-school, tier-sized — not implemented</td></tr>
+          <tr><td>Testing strategy</td><td class="status st-open">Open</td><td>No unit/integration/e2e plan or coverage target yet</td></tr>
+          <tr><td>CI/CD &amp; environments</td><td class="status st-open">Open</td><td>No pipeline; dev/staging/prod split not decided</td></tr>
+          <tr><td>Hosting &amp; infra</td><td class="status st-open">Open</td><td>Affects latency to Bangladesh, file storage choice, backup strategy</td></tr>
+          <tr><td>Observability</td><td class="status st-open">Open</td><td>No error tracking or structured logging decided</td></tr>
+          <tr><td>Backup / disaster recovery</td><td class="status st-open">Open</td><td>Not defined for Postgres</td></tr>
+          <tr><td>Data privacy &amp; compliance</td><td class="status st-open">Open</td><td>Minors' data, retention policy, ToS/Privacy Policy not drafted</td></tr>
+          <tr><td>Accessibility</td><td class="status st-open">Open</td><td>WCAG not considered for the two web admin panels</td></tr>
+          <tr><td>App store distribution</td><td class="status st-open">Open</td><td>Signing, versioning, Play Store listing not planned</td></tr>
+        </tbody>
+      </table>
+      <div class="note"><b>Local environment update (2026-10-04):</b> Node.js 20 LTS is installed, and every resource group in §06 is now implemented and verified end-to-end against a real PostgreSQL database — including generating an invoice, settling it through a signed mock webhook, and confirming two independently-onboarded schools cannot see a byte of each other's data. Several real bugs were caught and fixed along the way; see <code>backend/README.md</code> §"Bugs found by actually running this". Docker and the Flutter SDK are still not installed on this machine.</div>
+    </section>
+
+    <!-- ============ STACK ============ -->
+    <section id="stack">
+      <span class="sec-eyebrow">09</span>
+      <h2>Tech stack &amp; conventions</h2>
+      <table>
+        <thead><tr><th>Layer</th><th>Choice</th></tr></thead>
+        <tbody>
+          <tr><td>Mobile</td><td>Flutter (Android now; iOS in Phase 4 at near-zero extra cost)</td></tr>
+          <tr><td>Backend</td><td>NestJS (Node.js), REST, versioned under <code>/v1</code></td></tr>
+          <tr><td>Database</td><td>PostgreSQL, accessed via Prisma ORM + migrations</td></tr>
+          <tr><td>Auth</td><td>JWT access + refresh tokens, bcrypt password hashing</td></tr>
+          <tr><td>File storage</td><td>S3-compatible object storage (exact provider: open)</td></tr>
+          <tr><td>Push notifications</td><td>Firebase Cloud Messaging</td></tr>
+          <tr><td>SMS</td><td>Local Bangladesh SMS gateway (provider: open), fallback channel to push</td></tr>
+          <tr><td>Payments</td><td>SSLCommerz (bKash/Nagad/cards aggregated), webhook-settled, idempotent on gateway_ref</td></tr>
+          <tr><td>Web admin framework</td><td>Open — to be decided when the Owner/School Console is implemented</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============ ARTIFACTS ============ -->
+    <section id="artifacts">
+      <span class="sec-eyebrow">10</span>
+      <h2>Reference artifacts</h2>
+      <p class="lede">Every diagram and screen mockup referenced above exists as a live, interactive document from this design session.</p>
+      <ul class="artifact-list">
+        <li><div><div class="a-name">Campus Schema</div><div class="a-desc">Full ER diagram, 5 module figures + overview</div></div><a href="https://claude.ai/code/artifact/25d256d1-bba0-45cf-b196-acf583355c8d">Open ↗</a></li>
+        <li><div><div class="a-name">Campus API</div><div class="a-desc">45-endpoint reference, auth &amp; payment sequence diagrams</div></div><a href="https://claude.ai/code/artifact/ae5718a8-2d9d-4da4-9fe6-cf6ffe924e3f">Open ↗</a></li>
+        <li><div><div class="a-name">Campus Owner Console</div><div class="a-desc">Super Admin dashboard mockup</div></div><a href="https://claude.ai/code/artifact/bfd474f8-2ce3-4e3a-9913-7e2ae26fcec3">Open ↗</a></li>
+        <li><div><div class="a-name">Campus School Console</div><div class="a-desc">School Admin dashboard mockup</div></div><a href="https://claude.ai/code/artifact/d200319b-fbd4-4f35-b831-ca72e944727e">Open ↗</a></li>
+        <li><div><div class="a-name">Campus App Flow</div><div class="a-desc">Flutter Student/Parent screen flow</div></div><a href="https://claude.ai/code/artifact/eaf93fab-4ecf-4a37-8ac2-40ea2d181e80">Open ↗</a></li>
+        <li><div><div class="a-name">Campus Admission &amp; Attendance</div><div class="a-desc">Admission wizard + teacher attendance marking</div></div><a href="https://claude.ai/code/artifact/83612596-5ef7-4c17-88d9-d7e182ac3e29">Open ↗</a></li>
+        <li><div><div class="a-name">Campus Exams &amp; Messaging</div><div class="a-desc">Marks entry, report card, parent-teacher chat</div></div><a href="https://claude.ai/code/artifact/06065c7d-0bcc-444a-b99d-f167e0d38c98">Open ↗</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <span>Campus Specification · Rev v1</span>
+      <span>School Management SaaS — Master Specification</span>
+    </footer>
+  </main>
+</div>
