@@ -68,6 +68,13 @@ export class FeesService {
     user: AuthenticatedUser,
     filters: { studentId?: string; status?: InvoiceStatus },
   ) {
+    // A student only ever means themself — fixed to their own id rather
+    // than trusted from the query string, same reasoning as a Parent
+    // being required to name a studentId instead of seeing every family's
+    // invoices by default.
+    if (user.role === 'STUDENT') {
+      filters = { ...filters, studentId: user.sub };
+    }
     if (user.role === 'PARENT' && !filters.studentId) {
       throw new BadRequestException('studentId is required for the parent role');
     }

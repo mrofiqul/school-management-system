@@ -19,8 +19,12 @@ export class StudentsController {
 
   @Roles(Role.ADMIN, Role.TEACHER)
   @Get()
-  list(@CurrentUser() user: AuthenticatedUser, @Query('sectionId') sectionId?: string) {
-    return this.studentsService.list(user.schoolId!, sectionId);
+  list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('sectionId') sectionId?: string,
+    @Query('classId') classId?: string,
+  ) {
+    return this.studentsService.list(user.schoolId!, sectionId, classId);
   }
 
   @Roles(Role.ADMIN)

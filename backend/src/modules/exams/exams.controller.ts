@@ -45,6 +45,18 @@ export class ExamsController {
   }
 
   @Roles(Role.TEACHER)
+  @Get('exam-schedules/mine')
+  myExamSchedules(@CurrentUser() user: AuthenticatedUser) {
+    return this.service.myExamSchedules(user.schoolId!, user.sub);
+  }
+
+  @Roles(Role.ADMIN, Role.TEACHER)
+  @Get('exam-schedules/:scheduleId/marks')
+  listMarks(@CurrentUser() user: AuthenticatedUser, @Param('scheduleId') scheduleId: string) {
+    return this.service.listMarks(user.schoolId!, scheduleId);
+  }
+
+  @Roles(Role.TEACHER)
   @Post('exam-schedules/:scheduleId/marks')
   enterMarks(
     @CurrentUser() user: AuthenticatedUser,

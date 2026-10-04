@@ -21,12 +21,20 @@ backend/.pgdata/
 backend/.pgpwfile
 backend/server.pid
 
-# Flutter / Dart (future mobile/ directory)
+# Flutter / Dart
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+.flutter-plugins-dependencies.json
 *.g.dart
 /mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/android/app/.cxx/
+mobile/ios/Flutter/.last_build_id
+mobile/screen*.png
+mobile/ui.xml
 
 # Logs
 *.log

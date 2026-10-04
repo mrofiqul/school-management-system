@@ -33,7 +33,7 @@ export class FeesController {
     return this.service.generateInvoices(user.schoolId!, id);
   }
 
-  @Roles(Role.ADMIN, Role.PARENT)
+  @Roles(Role.ADMIN, Role.PARENT, Role.STUDENT)
   @Get('invoices')
   listInvoices(
     @CurrentUser() user: AuthenticatedUser,

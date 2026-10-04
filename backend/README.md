@@ -20,6 +20,11 @@ against a real Postgres database, not just compiled:
   parent checkout, a signed public webhook, manual payment recording
 - **Communication** (Table 07) — scoped notices (all/class/section/role),
   teacher↔parent messaging, a user's own notification log
+- **Teacher discovery** (added while building the Flutter Teacher
+  screens, not in the original Table list) — `GET /timetable/mine`,
+  `GET /exam-schedules/mine`, `GET /exam-schedules/:id/marks` — a Teacher
+  has no way to find their own classes or schedules otherwise, since the
+  list endpoints for those are Admin-only
 
 Full chain tested by hand: admit a student into a section → assign a
 teacher → build a timetable slot → mark attendance → run an exam → enter

@@ -22,6 +22,25 @@ export class TimetableService {
     return { data: slots.map(this.serialize) };
   }
 
+  /**
+   * A teacher's own weekly schedule, across every section they teach —
+   * the entry point a Teacher needs to even get to "mark attendance for
+   * this period" without already knowing a sectionId. classSubject is a
+   * required relation here, so nesting the filter through it is safe
+   * (see the note on students.service.ts for why that distinction matters).
+   */
+  async myTimetable(teacherId: string) {
+    const slots = await this.prisma.timetableSlot.findMany({
+      where: { classSubject: { teacherId } },
+      include: {
+        section: { select: { id: true, name: true, class: { select: { name: true } } } },
+        classSubject: { select: { subject: { select: { name: true } } } },
+      },
+      orderBy: [{ dayOfWeek: 'asc' }, { startsAt: 'asc' }],
+    });
+    return { data: slots.map(this.serialize) };
+  }
+
   async create(schoolId: string, sectionId: string, dto: CreateTimetableSlotDto) {
     await this.assertSectionInSchool(schoolId, sectionId);
 

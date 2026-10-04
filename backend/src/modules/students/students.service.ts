@@ -19,11 +19,16 @@ export class StudentsService {
    * `section: { ... }` as "a matching related row must exist," the same
    * way an inner join excludes a null foreign key.
    */
-  async list(schoolId: string, sectionId?: string) {
+  async list(schoolId: string, sectionId?: string, classId?: string) {
     const students = await this.prisma.studentProfile.findMany({
       where: {
         user: { schoolId },
         sectionId: sectionId ?? undefined, // plain scalar filter — never excludes a null section
+        // Unlike sectionId above, filtering by classId genuinely does mean
+        // "must belong to a section of this class" — a student with no
+        // section at all has no class either, so excluding them here is
+        // correct, not the null-FK trap from the comment above.
+        section: classId ? { classId } : undefined,
       },
       include: {
         user: { select: { id: true, fullName: true, email: true, status: true } },

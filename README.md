@@ -14,7 +14,7 @@ docs/
   specification.html   ← master spec, read this first
 backend/                ← NestJS + Prisma API (all 8 resource groups implemented)
 admin-web/              ← Owner + School Console (not yet scaffolded)
-mobile/                 ← Flutter app — Student/Parent/Teacher (not yet scaffolded)
+mobile/                 ← Flutter app — Student, Parent & Teacher screens built and verified
 ```
 
 ## Status
@@ -22,13 +22,19 @@ mobile/                 ← Flutter app — Student/Parent/Teacher (not yet scaf
 - [x] Specification — data model, API, screen mockups
 - [x] Backend — all 8 resource groups (Auth, Platform, Tenancy & People,
       Academics, Attendance, Exams/Grades/Assignments, Fees & Billing,
-      Communication), implemented and verified end-to-end against a real
-      Postgres DB, including cross-tenant isolation with two live schools
-      (2026-10-04); see `backend/README.md`
+      Communication) plus three teacher-discovery endpoints
+      (`/timetable/mine`, `/exam-schedules/mine`, `/exam-schedules/:id/marks`),
+      implemented and verified end-to-end against a real Postgres DB,
+      including cross-tenant isolation with two live schools (2026-10-04);
+      see `backend/README.md`
+- [x] Flutter app — Student, Parent, and Teacher screens (Home, Academics,
+      Fees, Messages, Profile, plus Teacher's Attendance marking and Marks
+      entry), role-conditional navigation — three distinct nav bars, not
+      two — running on a real Android emulator against the live backend
+      (2026-10-04); see `mobile/README.md`
 - [ ] Admin web app (Owner Console + School Console)
-- [ ] Flutter app (Student/Parent/Teacher)
 
-See `backend/README.md` for how to run the API locally.
+See `backend/README.md` and `mobile/README.md` for how to run each piece locally.
 
 ## Interactive design reference
 

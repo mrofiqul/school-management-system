@@ -21,6 +21,12 @@ export class TimetableController {
     return this.service.list(user.schoolId!, sectionId);
   }
 
+  @Roles(Role.TEACHER)
+  @Get('timetable/mine')
+  mine(@CurrentUser() user: AuthenticatedUser) {
+    return this.service.myTimetable(user.sub);
+  }
+
   @Roles(Role.ADMIN)
   @Post('sections/:sectionId/timetable')
   create(

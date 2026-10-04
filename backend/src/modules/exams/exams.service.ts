@@ -10,6 +10,31 @@ import { BulkMarksDto } from './dto/bulk-marks.dto';
 export class ExamsService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * A teacher's own schedules to grade — matched by (classId, subjectId)
+   * against their ClassSubject assignments, since ExamSchedule has no
+   * teacherId of its own. Built from two scalar-equality queries, not a
+   * nested relation filter, so there's no null-FK trap to worry about here.
+   */
+  async myExamSchedules(schoolId: string, teacherId: string) {
+    const myClassSubjects = await this.prisma.classSubject.findMany({
+      where: { teacherId, class: { academicYear: { schoolId } } },
+      select: { classId: true, subjectId: true },
+    });
+    if (myClassSubjects.length === 0) return { data: [] };
+
+    const schedules = await this.prisma.examSchedule.findMany({
+      where: { OR: myClassSubjects.map((cs) => ({ classId: cs.classId, subjectId: cs.subjectId })) },
+      include: {
+        exam: { select: { id: true, name: true } },
+        class: { select: { name: true } },
+        subject: { select: { name: true } },
+      },
+      orderBy: { heldOn: 'desc' },
+    });
+    return { data: schedules };
+  }
+
   async listExams(schoolId: string) {
     const exams = await this.prisma.exam.findMany({
       where: { academicYear: { schoolId } },
@@ -69,6 +94,17 @@ export class ExamsService {
       },
     });
     return { data: schedule };
+  }
+
+  /** Existing marks for a schedule, so reopening marks entry isn't a blank form. */
+  async listMarks(schoolId: string, scheduleId: string) {
+    const schedule = await this.prisma.examSchedule.findFirst({
+      where: { id: scheduleId, exam: { academicYear: { schoolId } } },
+    });
+    if (!schedule) throw new NotFoundException('Exam schedule not found');
+
+    const marks = await this.prisma.mark.findMany({ where: { examScheduleId: scheduleId } });
+    return { data: marks };
   }
 
   async enterMarks(schoolId: string, scheduleId: string, dto: BulkMarksDto) {
