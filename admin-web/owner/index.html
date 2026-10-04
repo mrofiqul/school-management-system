@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Owner Console</title>
+<style>
+  :root{
+    --paper:#F5F3EE; --panel:#FBFAF6; --ink:#20262B; --ink-soft:#5B6269; --ink-faint:#8B8F8A;
+    --line:#D9D4C7; --line-strong:#C3BCAA;
+    --accent:#A8571F; --accent-soft:#E9DCC3;
+    --teal:#2F6E68; --teal-soft:#DCE8E5;
+    --success:#3C7A5D; --success-soft:#DCEAE1;
+    --warning:#A3791F; --warning-soft:#EFE6CB;
+    --danger:#AE3B32; --danger-soft:#F3DAD6;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    --serif:"Newsreader",Georgia,serif;
+    --sans:"Public Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+    --rail-bg:#20262B; --rail-ink:#F2EFE7; --rail-ink-soft:#A3AAA6; --rail-line:#343B40; --rail-accent:#DE9254;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#15181A; --panel:#1B1F22; --ink:#EAE7DE; --ink-soft:#A8ADA8; --ink-faint:#6E7470;
+      --line:#2E3336; --line-strong:#3D4448;
+      --accent:#DE9254; --accent-soft:#3A2C1C;
+      --teal:#5CAAA1; --teal-soft:#1E2E2C;
+      --success:#5FAE84; --success-soft:#1E2E26;
+      --warning:#D9A94A; --warning-soft:#332B17;
+      --danger:#E07268; --danger-soft:#3A211D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#15181A; --panel:#1B1F22; --ink:#EAE7DE; --ink-soft:#A8ADA8; --ink-faint:#6E7470;
+    --line:#2E3336; --line-strong:#3D4448;
+    --accent:#DE9254; --accent-soft:#3A2C1C;
+    --teal:#5CAAA1; --teal-soft:#1E2E2C;
+    --success:#5FAE84; --success-soft:#1E2E26;
+    --warning:#D9A94A; --warning-soft:#332B17;
+    --danger:#E07268; --danger-soft:#3A211D;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--paper); color:var(--ink); font-family:var(--sans); margin:0; font-size:14px;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select{font-family:inherit;}
+  code,.mono{font-family:var(--mono);}
+  a{color:var(--accent);}
+
+  /* ---------- login ---------- */
+  #login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center;}
+  .login-card{width:340px; padding:32px; border:1px solid var(--line); background:var(--panel); border-radius:10px;}
+  .login-card .mark{color:var(--accent); font-size:28px; margin-bottom:6px;}
+  .login-card h1{font-family:var(--serif); font-size:22px; margin:0 0 4px;}
+  .login-card p{color:var(--ink-soft); font-size:13px; margin:0 0 22px;}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
+  .field label{font-size:11.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
+  .field input, .field select, .field textarea{
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink);
+    border-radius:6px; padding:9px 11px; font-size:13.5px;
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .error-box{background:var(--danger-soft); color:var(--danger); border-radius:6px; padding:10px 12px; font-size:12.5px; margin-bottom:14px;}
+
+  /* ---------- app shell ---------- */
+  #app{display:none; min-height:100vh;}
+  .app{display:flex; min-height:100vh;}
+  .rail{width:220px; flex:none; background:var(--rail-bg); color:var(--rail-ink); display:flex; flex-direction:column; padding:20px 14px; gap:28px; position:sticky; top:0; height:100vh;}
+  .rail-brand{font-family:var(--serif); font-size:17px; font-weight:600; display:flex; align-items:baseline; gap:8px;}
+  .rail-mark{color:var(--rail-accent); font-size:15px;}
+  .rail-sub{font-family:var(--sans); font-size:10.5px; font-weight:500; color:var(--rail-ink-soft); text-transform:uppercase; letter-spacing:.06em; display:block; margin-top:2px;}
+  .rail-brand-wrap{display:flex; flex-direction:column;}
+  .rail-nav{display:flex; flex-direction:column; gap:3px;}
+  .rail-link{all:unset; display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; color:var(--rail-ink-soft); font-size:13.5px; font-weight:500;}
+  .rail-link:hover{background:#ffffff0d; color:var(--rail-ink);}
+  .rail-link.active{background:var(--rail-accent); color:#241405; font-weight:600;}
+  .rail-link .dot{width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.55;}
+  .rail-link.active .dot{opacity:1;}
+  .rail-spacer{flex:1;}
+  .rail-foot{display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--rail-line); padding-top:14px;}
+  .rail-user{display:flex; align-items:center; gap:10px;}
+  .rail-avatar{width:30px; height:30px; border-radius:50%; background:var(--rail-accent); color:#241405; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex:none;}
+  .rail-user-name{font-size:13px; font-weight:600; color:var(--rail-ink);}
+  .rail-user-role{font-size:11px; color:var(--rail-ink-soft);}
+  .rail-logout{all:unset; cursor:pointer; font-size:11.5px; color:var(--rail-ink-soft); padding:4px 0;}
+  .rail-logout:hover{color:var(--rail-ink);}
+
+  .content{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 32px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .topbar h1{font-family:var(--serif); font-size:24px; font-weight:600; margin:0;}
+  .topbar-actions{display:flex; align-items:center; gap:10px;}
+  .search{border:1px solid var(--line-strong); background:var(--panel); color:var(--ink); border-radius:6px; padding:8px 12px; font-size:13px; width:220px;}
+  .search:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .btn{border:1px solid var(--line-strong); background:var(--panel); color:var(--ink); border-radius:6px; padding:8px 14px; font-size:13px; font-weight:600;}
+  .btn:focus-visible, .rail-link:focus-visible, .chip:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn[hidden]{display:none;}
+  .btn:disabled{opacity:.6; cursor:default;}
+
+  main.scroll{padding:28px 32px 60px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;}
+  .kpi{border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:16px 18px;}
+  .kpi-label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:8px;}
+  .kpi-value{font-family:var(--mono); font-size:25px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .kpi-sub{font-size:12px; margin-top:6px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+
+  .panel{border:1px solid var(--line); background:var(--panel); border-radius:8px; margin-bottom:24px; overflow:hidden;}
+  .panel-head{display:flex; justify-content:space-between; align-items:baseline; padding:16px 20px 4px;}
+  .panel-head h2{font-size:15px; font-weight:600; margin:0;}
+  .panel-head .hint{font-size:12px; color:var(--ink-faint);}
+  .panel-body{padding:12px 20px 20px;}
+  .empty-note{color:var(--ink-faint); font-size:13px; padding:8px 0;}
+
+  .chart svg{width:100%; height:auto; display:block; color:var(--ink);}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:600; padding:0 14px 10px; border-bottom:1px solid var(--line-strong);}
+  td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.clickable{cursor:pointer;}
+  tbody tr.clickable:hover{background:var(--accent-soft);}
+  td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right;}
+  td.name{font-weight:600;}
+  .muted{color:var(--ink-soft);}
+
+  .pill{font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px; display:inline-block; white-space:nowrap;}
+  .pill-active{background:var(--success-soft); color:var(--success);}
+  .pill-trial{background:var(--teal-soft); color:var(--teal);}
+  .pill-suspended{background:var(--danger-soft); color:var(--danger);}
+
+  .filters{display:flex; gap:8px; margin:0 0 16px; flex-wrap:wrap;}
+  .chip{border:1px solid var(--line-strong); background:var(--panel); color:var(--ink-soft); border-radius:99px; padding:5px 13px; font-size:12.5px; font-weight:500;}
+  .chip.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+
+  .plans{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:18px;}
+  .plan-card{border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:22px;}
+  .plan-tier{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); font-weight:700; margin-bottom:10px;}
+  .plan-price{font-family:var(--mono); font-size:26px; font-weight:600; margin-bottom:2px; font-variant-numeric:tabular-nums;}
+  .plan-price span{font-size:12px; color:var(--ink-faint); font-weight:400;}
+  .plan-cap{font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;}
+
+  .modal-scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:30; padding:20px;}
+  .modal-scrim.open{display:flex;}
+  .modal{width:420px; max-width:100%; max-height:90vh; overflow-y:auto; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:24px;}
+  .modal h3{font-family:var(--serif); font-size:19px; margin:0 0 16px;}
+  .modal-actions{display:flex; gap:10px; margin-top:18px;}
+  .modal-actions .btn{flex:1;}
+
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.35); opacity:0; pointer-events:none; transition:opacity .15s ease; z-index:20;}
+  .scrim.open{opacity:1; pointer-events:auto;}
+  .slideover{position:fixed; top:0; right:0; height:100vh; width:380px; max-width:90vw; background:var(--paper); border-left:1px solid var(--line-strong); transform:translateX(100%); transition:transform .18s ease; z-index:21; padding:24px; overflow-y:auto;}
+  .slideover.open{transform:translateX(0);}
+  .slideover-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;}
+  .slideover-head h3{font-family:var(--serif); font-size:20px; margin:0 0 4px;}
+  .slideover-close{all:unset; cursor:pointer; color:var(--ink-faint); font-size:20px; line-height:1; padding:2px;}
+  .slideover-close:hover{color:var(--ink);}
+  .so-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .so-row .k{color:var(--ink-faint);}
+  .so-row .v{font-weight:600; font-variant-numeric:tabular-nums;}
+  .so-actions{display:flex; gap:8px; margin-top:20px;}
+  .so-actions .btn{flex:1;}
+
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:8px; font-size:13px; z-index:40; opacity:0; pointer-events:none; transition:opacity .2s;}
+  .toast.show{opacity:1;}
+
+  @media (max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="mark">◆</div>
+    <h1>Campus Owner Console</h1>
+    <p>Super Admin sign-in — platform-wide access.</p>
+    <div id="login-error" class="error-box" style="display:none;"></div>
+    <div class="field"><label>Email</label><input id="login-email" type="email" value="owner@campus.app"></div>
+    <div class="field"><label>Password</label><input id="login-password" type="password" value="ChangeMe123!"></div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%;">Log in</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="app">
+    <aside class="rail">
+      <div class="rail-brand-wrap">
+        <div class="rail-brand"><span class="rail-mark">◆</span>Campus</div>
+        <span class="rail-sub">Owner Console</span>
+      </div>
+      <nav class="rail-nav">
+        <button class="rail-link active" data-view="overview"><span class="dot"></span>Overview</button>
+        <button class="rail-link" data-view="schools"><span class="dot"></span>Schools</button>
+        <button class="rail-link" data-view="plans"><span class="dot"></span>Plans</button>
+      </nav>
+      <div class="rail-spacer"></div>
+      <div class="rail-foot">
+        <div class="rail-user">
+          <div class="rail-avatar" id="rail-avatar">?</div>
+          <div>
+            <div class="rail-user-name" id="rail-user-name">—</div>
+            <div class="rail-user-role">Super Admin</div>
+          </div>
+        </div>
+        <button class="rail-logout" id="logout-btn">Log out</button>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <h1 id="page-title">Overview</h1>
+        <div class="topbar-actions">
+          <input class="search" id="school-search" placeholder="Search schools…" hidden>
+          <button class="btn btn-primary" id="onboard-btn">+ Onboard school</button>
+        </div>
+      </header>
+
+      <main class="scroll">
+
+        <!-- OVERVIEW -->
+        <section class="view active" id="view-overview">
+          <div class="kpis" id="overview-kpis"></div>
+          <div class="panel">
+            <div class="panel-head"><h2>Schools by status</h2><span class="hint">real counts from /platform/schools</span></div>
+            <div class="panel-body chart" id="status-chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Recently onboarded</h2><span class="hint">newest first</span></div>
+            <div class="panel-body">
+              <table><thead><tr><th>School</th><th>District</th><th>Plan</th><th>Status</th></tr></thead><tbody id="signups-body"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SCHOOLS -->
+        <section class="view" id="view-schools">
+          <div class="filters" id="school-filters">
+            <button class="chip active" data-filter="all">All</button>
+            <button class="chip" data-filter="ACTIVE">Active</button>
+            <button class="chip" data-filter="TRIAL">Trial</button>
+            <button class="chip" data-filter="SUSPENDED">Suspended</button>
+          </div>
+          <div class="panel">
+            <div class="panel-body" style="padding-top:18px;">
+              <table><thead><tr><th>School</th><th>District</th><th>Plan</th><th>Users</th><th>Status</th><th>Since</th></tr></thead><tbody id="schools-body"></tbody></table>
+              <div class="empty-note" id="schools-empty" style="display:none;">No schools yet.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PLANS -->
+        <section class="view" id="view-plans">
+          <div style="margin-bottom:16px;"><button class="btn btn-primary" id="new-plan-btn">+ New plan</button></div>
+          <div class="plans" id="plans-grid"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- Onboard school modal -->
+<div class="modal-scrim" id="onboard-scrim">
+  <div class="modal">
+    <h3>Onboard a school</h3>
+    <div id="onboard-error" class="error-box" style="display:none;"></div>
+    <div class="field"><label>School name</label><input id="onboard-name"></div>
+    <div class="field"><label>District</label><input id="onboard-district"></div>
+    <div class="field"><label>Plan</label><select id="onboard-plan"></select></div>
+    <div class="field"><label>Admin full name</label><input id="onboard-admin-name"></div>
+    <div class="field"><label>Admin email</label><input id="onboard-admin-email" type="email"></div>
+    <div class="field"><label>Admin password</label><input id="onboard-admin-password" type="password"></div>
+    <div class="modal-actions">
+      <button class="btn" id="onboard-cancel">Cancel</button>
+      <button class="btn btn-primary" id="onboard-submit">Create school</button>
+    </div>
+  </div>
+</div>
+
+<!-- New plan modal -->
+<div class="modal-scrim" id="plan-scrim">
+  <div class="modal">
+    <h3>New plan</h3>
+    <div id="plan-error" class="error-box" style="display:none;"></div>
+    <div class="field"><label>Tier name</label><input id="plan-tier" placeholder="e.g. Basic"></div>
+    <div class="field"><label>Max students</label><input id="plan-max" type="number" value="400"></div>
+    <div class="field"><label>Price (BDT)</label><input id="plan-price" type="number" value="3500"></div>
+    <div class="field"><label>Billing cycle</label>
+      <select id="plan-cycle"><option value="MONTHLY">Monthly</option><option value="YEARLY">Yearly</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="plan-cancel">Cancel</button>
+      <button class="btn btn-primary" id="plan-submit">Create plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- School detail slideover -->
+<div class="scrim" id="scrim"></div>
+<aside class="slideover" id="slideover">
+  <div class="slideover-head">
+    <div>
+      <h3 id="so-name">—</h3>
+      <span class="pill pill-active" id="so-status">Active</span>
+    </div>
+    <button class="slideover-close" id="so-close">×</button>
+  </div>
+  <div class="so-row"><span class="k">District</span><span class="v" id="so-district">—</span></div>
+  <div class="so-row"><span class="k">Plan</span><span class="v" id="so-plan">—</span></div>
+  <div class="so-row"><span class="k">Users</span><span class="v" id="so-users">—</span></div>
+  <div class="so-row"><span class="k">Onboarded</span><span class="v" id="so-since">—</span></div>
+  <div class="so-actions">
+    <button class="btn" id="so-suspend">Suspend</button>
+  </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = "http://localhost:3000/v1";
+let accessToken = sessionStorage.getItem("campus_owner_token") || null;
+let plansCache = [];
+let schoolsCache = [];
+let activeSchoolId = null;
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+async function api(path, { method = "GET", body } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (accessToken) headers["Authorization"] = "Bearer " + accessToken;
+  const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const msg = data && data.message ? (Array.isArray(data.message) ? data.message.join(", ") : data.message) : "Request failed";
+    throw new Error(msg);
+  }
+  return data && Object.prototype.hasOwnProperty.call(data, "data") ? data.data : data;
+}
+
+function fmtBdt(n){ return "৳" + Number(n).toLocaleString("en-IN"); }
+function fmtDate(iso){ return iso ? iso.substring(0,10) : "—"; }
+
+const pillClass = { ACTIVE:"pill-active", TRIAL:"pill-trial", SUSPENDED:"pill-suspended" };
+const pillLabel = { ACTIVE:"Active", TRIAL:"Trial", SUSPENDED:"Suspended" };
+
+// ---------- auth ----------
+async function doLogin(){
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errEl = document.getElementById("login-error");
+  errEl.style.display = "none";
+  try {
+    const result = await api("/auth/login", { method: "POST", body: { email, password } });
+    accessToken = result.accessToken;
+    const me = await api("/auth/me");
+    if (me.role !== "SUPER_ADMIN") throw new Error("This console is for Super Admin accounts only.");
+    sessionStorage.setItem("campus_owner_token", accessToken);
+    document.getElementById("rail-user-name").textContent = me.email.split("@")[0];
+    document.getElementById("rail-avatar").textContent = me.email[0].toUpperCase();
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    await loadEverything();
+  } catch (e) {
+    accessToken = null;
+    errEl.textContent = e.message;
+    errEl.style.display = "block";
+  }
+}
+document.getElementById("login-btn").addEventListener("click", doLogin);
+document.getElementById("login-password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+
+document.getElementById("logout-btn").addEventListener("click", () => {
+  accessToken = null;
+  sessionStorage.removeItem("campus_owner_token");
+  document.getElementById("app").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+});
+
+// ---------- data loading ----------
+async function loadEverything(){
+  try {
+    [schoolsCache, plansCache] = await Promise.all([api("/platform/schools"), api("/platform/plans")]);
+    renderOverview();
+    renderSchools("all");
+    renderPlans();
+  } catch (e) {
+    toast("Could not load: " + e.message);
+  }
+}
+
+function renderOverview(){
+  const active = schoolsCache.filter(s => s.status === "ACTIVE").length;
+  const trial = schoolsCache.filter(s => s.status === "TRIAL").length;
+  const suspended = schoolsCache.filter(s => s.status === "SUSPENDED").length;
+  const totalUsers = schoolsCache.reduce((sum, s) => sum + (s._count ? s._count.users : 0), 0);
+
+  document.getElementById("overview-kpis").innerHTML = `
+    <div class="kpi"><div class="kpi-label">Total schools</div><div class="kpi-value">${schoolsCache.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Active</div><div class="kpi-value">${active}</div></div>
+    <div class="kpi"><div class="kpi-label">Trial</div><div class="kpi-value">${trial}</div></div>
+    <div class="kpi"><div class="kpi-label">Total users</div><div class="kpi-value">${totalUsers}</div><div class="kpi-sub">staff + students + parents, all schools</div></div>
+  `;
+
+  const max = Math.max(active, trial, suspended, 1);
+  const barW = (n) => Math.round((n / max) * 100);
+  document.getElementById("status-chart").innerHTML = `
+    <div style="display:grid; gap:10px;">
+      ${[["Active", active, "var(--success)"], ["Trial", trial, "var(--teal)"], ["Suspended", suspended, "var(--danger)"]]
+        .map(([label, n, color]) => `
+          <div style="display:grid; grid-template-columns:80px 1fr 30px; align-items:center; gap:10px; font-size:12.5px;">
+            <span class="muted">${label}</span>
+            <div style="height:9px; border-radius:99px; background:var(--line); overflow:hidden;">
+              <div style="height:100%; width:${barW(n)}%; background:${color};"></div>
+            </div>
+            <span class="mono" style="font-family:var(--mono); text-align:right;">${n}</span>
+          </div>`).join("")}
+    </div>
+  `;
+
+  const recent = [...schoolsCache].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
+  document.getElementById("signups-body").innerHTML = recent.length ? recent.map(s => `
+    <tr><td class="name">${s.name}</td><td class="muted">${s.district || "—"}</td><td>${s.plan.tier}</td>
+    <td><span class="pill ${pillClass[s.status]}">${pillLabel[s.status]}</span></td></tr>
+  `).join("") : `<tr><td colspan="4" class="empty-note">No schools onboarded yet.</td></tr>`;
+}
+
+function renderSchools(filter){
+  const body = document.getElementById("schools-body");
+  const filtered = schoolsCache.filter(s => filter === "all" || s.status === filter);
+  document.getElementById("schools-empty").style.display = filtered.length ? "none" : "block";
+  body.innerHTML = filtered.map(s => `
+    <tr class="clickable" data-id="${s.id}">
+      <td class="name">${s.name}</td><td class="muted">${s.district || "—"}</td><td>${s.plan.tier}</td>
+      <td class="num">${s._count ? s._count.users : 0}</td>
+      <td><span class="pill ${pillClass[s.status]}">${pillLabel[s.status]}</span></td>
+      <td class="muted">${fmtDate(s.createdAt)}</td>
+    </tr>`).join("");
+  body.querySelectorAll("tr").forEach(tr => tr.addEventListener("click", () => openSlideover(tr.dataset.id)));
+}
+
+function renderPlans(){
+  document.getElementById("plans-grid").innerHTML = plansCache.map(p => `
+    <div class="plan-card">
+      <div class="plan-tier">${p.tier}</div>
+      <div class="plan-price">${fmtBdt(p.priceBdt)}<span>/${p.billingCycle === "MONTHLY" ? "mo" : "yr"}</span></div>
+      <div class="plan-cap">up to ${Number(p.maxStudents).toLocaleString("en-IN")} students</div>
+    </div>`).join("") || `<div class="empty-note">No plans yet — create one to onboard a school.</div>`;
+
+  const select = document.getElementById("onboard-plan");
+  select.innerHTML = plansCache.map(p => `<option value="${p.id}">${p.tier} — ${fmtBdt(p.priceBdt)}/${p.billingCycle === "MONTHLY" ? "mo" : "yr"}</option>`).join("");
+}
+
+// ---------- slideover ----------
+async function openSlideover(id){
+  activeSchoolId = id;
+  try {
+    const s = await api("/platform/schools/" + id);
+    document.getElementById("so-name").textContent = s.name;
+    const statusEl = document.getElementById("so-status");
+    statusEl.className = "pill " + pillClass[s.status];
+    statusEl.textContent = pillLabel[s.status];
+    document.getElementById("so-district").textContent = s.district || "—";
+    document.getElementById("so-plan").textContent = s.plan.tier;
+    document.getElementById("so-users").textContent = s._count ? s._count.users : 0;
+    document.getElementById("so-since").textContent = fmtDate(s.createdAt);
+    document.getElementById("so-suspend").textContent = s.status === "SUSPENDED" ? "Reactivate" : "Suspend";
+    document.getElementById("slideover").classList.add("open");
+    document.getElementById("scrim").classList.add("open");
+  } catch (e) { toast(e.message); }
+}
+function closeSlideover(){
+  document.getElementById("slideover").classList.remove("open");
+  document.getElementById("scrim").classList.remove("open");
+}
+document.getElementById("so-close").addEventListener("click", closeSlideover);
+document.getElementById("scrim").addEventListener("click", closeSlideover);
+document.getElementById("so-suspend").addEventListener("click", async () => {
+  const school = schoolsCache.find(s => s.id === activeSchoolId);
+  const newStatus = school.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+  try {
+    await api("/platform/schools/" + activeSchoolId, { method: "PATCH", body: { status: newStatus } });
+    toast(newStatus === "SUSPENDED" ? "School suspended" : "School reactivated");
+    closeSlideover();
+    await loadEverything();
+  } catch (e) { toast(e.message); }
+});
+
+// ---------- filters & nav ----------
+document.querySelectorAll("#school-filters .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("#school-filters .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    renderSchools(chip.dataset.filter);
+  });
+});
+
+const titles = { overview:"Overview", schools:"Schools", plans:"Plans" };
+document.querySelectorAll(".rail-link").forEach(link => {
+  link.addEventListener("click", () => {
+    document.querySelectorAll(".rail-link").forEach(l => l.classList.remove("active"));
+    link.classList.add("active");
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    document.getElementById("view-" + link.dataset.view).classList.add("active");
+    document.getElementById("page-title").textContent = titles[link.dataset.view];
+    document.getElementById("onboard-btn").hidden = link.dataset.view !== "schools" && link.dataset.view !== "overview";
+  });
+});
+
+// ---------- onboard school modal ----------
+document.getElementById("onboard-btn").addEventListener("click", () => {
+  document.getElementById("onboard-error").style.display = "none";
+  document.getElementById("onboard-name").value = "";
+  document.getElementById("onboard-district").value = "";
+  document.getElementById("onboard-admin-name").value = "";
+  document.getElementById("onboard-admin-email").value = "";
+  document.getElementById("onboard-admin-password").value = "";
+  document.getElementById("onboard-scrim").classList.add("open");
+});
+document.getElementById("onboard-cancel").addEventListener("click", () => document.getElementById("onboard-scrim").classList.remove("open"));
+document.getElementById("onboard-submit").addEventListener("click", async () => {
+  const body = {
+    name: document.getElementById("onboard-name").value.trim(),
+    district: document.getElementById("onboard-district").value.trim() || undefined,
+    planId: document.getElementById("onboard-plan").value,
+    adminName: document.getElementById("onboard-admin-name").value.trim(),
+    adminEmail: document.getElementById("onboard-admin-email").value.trim(),
+    adminPassword: document.getElementById("onboard-admin-password").value,
+  };
+  const errEl = document.getElementById("onboard-error");
+  try {
+    await api("/platform/schools", { method: "POST", body });
+    document.getElementById("onboard-scrim").classList.remove("open");
+    toast("School onboarded");
+    await loadEverything();
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = "block"; }
+});
+
+// ---------- new plan modal ----------
+document.getElementById("new-plan-btn").addEventListener("click", () => {
+  document.getElementById("plan-error").style.display = "none";
+  document.getElementById("plan-tier").value = "";
+  document.getElementById("plan-max").value = 400;
+  document.getElementById("plan-price").value = 3500;
+  document.getElementById("plan-scrim").classList.add("open");
+});
+document.getElementById("plan-cancel").addEventListener("click", () => document.getElementById("plan-scrim").classList.remove("open"));
+document.getElementById("plan-submit").addEventListener("click", async () => {
+  const body = {
+    tier: document.getElementById("plan-tier").value.trim(),
+    maxStudents: Number(document.getElementById("plan-max").value),
+    priceBdt: Number(document.getElementById("plan-price").value),
+    billingCycle: document.getElementById("plan-cycle").value,
+  };
+  const errEl = document.getElementById("plan-error");
+  try {
+    await api("/platform/plans", { method: "POST", body });
+    document.getElementById("plan-scrim").classList.remove("open");
+    toast("Plan created");
+    await loadEverything();
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = "block"; }
+});
+
+// ---------- boot ----------
+(async function boot(){
+  if (accessToken) {
+    try {
+      const me = await api("/auth/me");
+      if (me.role === "SUPER_ADMIN") {
+        document.getElementById("rail-user-name").textContent = me.email.split("@")[0];
+        document.getElementById("rail-avatar").textContent = me.email[0].toUpperCase();
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        await loadEverything();
+        return;
+      }
+    } catch (_) { /* token invalid/expired — fall through to login */ }
+    accessToken = null;
+    sessionStorage.removeItem("campus_owner_token");
+  }
+})();
+</script>
+</body>
+</html>

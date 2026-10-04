@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus School Console</title>
+<style>
+  :root{
+    --paper:#F5F3EE; --panel:#FBFAF6; --ink:#20262B; --ink-soft:#5B6269; --ink-faint:#8B8F8A;
+    --line:#D9D4C7; --line-strong:#C3BCAA;
+    --accent:#A8571F; --accent-soft:#E9DCC3;
+    --teal:#2F6E68; --teal-soft:#DCE8E5;
+    --success:#3C7A5D; --success-soft:#DCEAE1;
+    --warning:#A3791F; --warning-soft:#EFE6CB;
+    --danger:#AE3B32; --danger-soft:#F3DAD6;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    --serif:"Newsreader",Georgia,serif;
+    --sans:"Public Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+    --rail-bg:#20262B; --rail-ink:#F2EFE7; --rail-ink-soft:#A3AAA6; --rail-line:#343B40; --rail-accent:#7FAE4E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#15181A; --panel:#1B1F22; --ink:#EAE7DE; --ink-soft:#A8ADA8; --ink-faint:#6E7470;
+      --line:#2E3336; --line-strong:#3D4448;
+      --accent:#DE9254; --accent-soft:#3A2C1C;
+      --teal:#5CAAA1; --teal-soft:#1E2E2C;
+      --success:#5FAE84; --success-soft:#1E2E26;
+      --warning:#D9A94A; --warning-soft:#332B17;
+      --danger:#E07268; --danger-soft:#3A211D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#15181A; --panel:#1B1F22; --ink:#EAE7DE; --ink-soft:#A8ADA8; --ink-faint:#6E7470;
+    --line:#2E3336; --line-strong:#3D4448;
+    --accent:#DE9254; --accent-soft:#3A2C1C;
+    --teal:#5CAAA1; --teal-soft:#1E2E2C;
+    --success:#5FAE84; --success-soft:#1E2E26;
+    --warning:#D9A94A; --warning-soft:#332B17;
+    --danger:#E07268; --danger-soft:#3A211D;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--paper); color:var(--ink); font-family:var(--sans); margin:0; font-size:14px;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  code,.mono{font-family:var(--mono);}
+
+  #login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center;}
+  .login-card{width:340px; padding:32px; border:1px solid var(--line); background:var(--panel); border-radius:10px;}
+  .login-card .mark{color:var(--accent); font-size:28px; margin-bottom:6px;}
+  .login-card h1{font-family:var(--serif); font-size:22px; margin:0 0 4px;}
+  .login-card p{color:var(--ink-soft); font-size:13px; margin:0 0 22px;}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
+  .field label{font-size:11.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
+  .field input, .field select, .field textarea{border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); border-radius:6px; padding:9px 11px; font-size:13.5px; width:100%;}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .field textarea{min-height:72px; resize:vertical;}
+  .error-box{background:var(--danger-soft); color:var(--danger); border-radius:6px; padding:10px 12px; font-size:12.5px; margin-bottom:14px;}
+
+  #app{display:none; min-height:100vh;}
+  .app{display:flex; min-height:100vh;}
+  .rail{width:224px; flex:none; background:var(--rail-bg); color:var(--rail-ink); display:flex; flex-direction:column; padding:20px 14px; gap:26px; position:sticky; top:0; height:100vh;}
+  .rail-brand{display:flex; align-items:center; gap:10px;}
+  .rail-mono{width:34px; height:34px; border-radius:8px; background:var(--rail-accent); color:#16210c; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; flex:none;}
+  .rail-school-name{font-family:var(--serif); font-size:15.5px; font-weight:600; line-height:1.2;}
+  .rail-school-sub{font-family:var(--sans); font-size:10px; font-weight:500; color:var(--rail-ink-soft); text-transform:uppercase; letter-spacing:.06em;}
+  .rail-nav{display:flex; flex-direction:column; gap:3px;}
+  .rail-link{all:unset; display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; color:var(--rail-ink-soft); font-size:13.5px; font-weight:500;}
+  .rail-link:hover{background:#ffffff0d; color:var(--rail-ink);}
+  .rail-link.active{background:var(--rail-accent); color:#16210c; font-weight:600;}
+  .rail-link .dot{width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.55;}
+  .rail-link.active .dot{opacity:1;}
+  .rail-spacer{flex:1;}
+  .rail-foot{border-top:1px solid var(--rail-line); padding-top:12px; display:flex; flex-direction:column; gap:10px;}
+  .rail-user{display:flex; align-items:center; gap:10px;}
+  .rail-avatar{width:28px; height:28px; border-radius:50%; background:var(--rail-ink-soft); color:var(--rail-bg); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex:none;}
+  .rail-user-name{font-size:12.5px; font-weight:600; color:var(--rail-ink);}
+  .rail-user-role{font-size:10.5px; color:var(--rail-ink-soft);}
+  .rail-powered{font-size:10px; color:var(--rail-ink-soft); opacity:.7;}
+  .rail-logout{all:unset; cursor:pointer; font-size:11.5px; color:var(--rail-ink-soft); padding:2px 0;}
+  .rail-logout:hover{color:var(--rail-ink);}
+
+  .content{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 32px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .topbar h1{font-family:var(--serif); font-size:24px; font-weight:600; margin:0;}
+  .topbar-actions{display:flex; align-items:center; gap:10px;}
+  .btn{border:1px solid var(--line-strong); background:var(--panel); color:var(--ink); border-radius:6px; padding:8px 14px; font-size:13px; font-weight:600;}
+  .btn:focus-visible, .rail-link:focus-visible, .chip:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn[hidden]{display:none;}
+  .btn-sm{padding:5px 10px; font-size:12px;}
+
+  main.scroll{padding:28px 32px 60px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;}
+  .kpi{border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:16px 18px;}
+  .kpi-label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:8px;}
+  .kpi-value{font-family:var(--mono); font-size:23px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .kpi-sub{font-size:12px; margin-top:6px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .kpi-bar{height:5px; border-radius:99px; background:var(--line); margin-top:9px; overflow:hidden;}
+  .kpi-bar-fill{height:100%; background:var(--accent);}
+
+  .grid-2{display:grid; grid-template-columns:1.1fr .9fr; gap:20px; align-items:start;}
+  .panel{border:1px solid var(--line); background:var(--panel); border-radius:8px; margin-bottom:20px; overflow:hidden;}
+  .panel-head{display:flex; justify-content:space-between; align-items:baseline; padding:16px 20px 4px; flex-wrap:wrap; gap:8px;}
+  .panel-head h2{font-size:15px; font-weight:600; margin:0;}
+  .panel-head .hint{font-size:12px; color:var(--ink-faint);}
+  .panel-body{padding:12px 20px 20px;}
+  .empty-note{color:var(--ink-faint); font-size:13px; padding:8px 0;}
+
+  .notice-list{list-style:none; margin:0; padding:0; display:grid; gap:12px;}
+  .notice-item{padding-bottom:12px; border-bottom:1px solid var(--line);}
+  .notice-item:last-child{border-bottom:none; padding-bottom:0;}
+  .notice-title{font-size:13px; font-weight:600; margin-bottom:3px;}
+  .notice-meta{font-size:11.5px; color:var(--ink-faint);}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:600; padding:0 14px 10px; border-bottom:1px solid var(--line-strong);}
+  td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.clickable{cursor:pointer;}
+  tbody tr.clickable:hover{background:var(--accent-soft);}
+  td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right;}
+  td.name{font-weight:600;}
+  .muted{color:var(--ink-soft);}
+
+  .pill{font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px; display:inline-block; white-space:nowrap;}
+  .pill-paid{background:var(--success-soft); color:var(--success);}
+  .pill-due,.pill-pending{background:var(--warning-soft); color:var(--warning);}
+  .pill-overdue{background:var(--danger-soft); color:var(--danger);}
+
+  .filters{display:flex; gap:8px; margin:0 0 16px; flex-wrap:wrap;}
+  .chip{border:1px solid var(--line-strong); background:var(--panel); color:var(--ink-soft); border-radius:99px; padding:5px 13px; font-size:12.5px; font-weight:500;}
+  .chip.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+
+  .tt-wrap{overflow-x:auto;}
+  table.timetable{min-width:720px;}
+  table.timetable th{text-align:center;}
+  table.timetable td{text-align:center; padding:8px 10px;}
+  .tt-period{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-align:left !important; white-space:nowrap;}
+  .tt-cell{border-radius:6px; padding:7px 6px !important; background:var(--teal-soft);}
+  .tt-subject{font-weight:600; font-size:12.5px;}
+  .tt-teacher{font-size:10.5px; color:var(--ink-faint); font-family:var(--mono);}
+  .tt-empty{color:var(--ink-faint); font-size:11px;}
+
+  .compose{display:grid; gap:10px; margin-bottom:22px;}
+  .compose-row{display:flex; gap:10px;}
+  .compose-row select{max-width:200px;}
+
+  .modal-scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:30; padding:20px;}
+  .modal-scrim.open{display:flex;}
+  .modal{width:440px; max-width:100%; max-height:90vh; overflow-y:auto; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:24px;}
+  .modal h3{font-family:var(--serif); font-size:19px; margin:0 0 16px;}
+  .modal-actions{display:flex; gap:10px; margin-top:18px;}
+  .modal-actions .btn{flex:1;}
+  .field-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.35); opacity:0; pointer-events:none; transition:opacity .15s ease; z-index:20;}
+  .scrim.open{opacity:1; pointer-events:auto;}
+  .slideover{position:fixed; top:0; right:0; height:100vh; width:380px; max-width:90vw; background:var(--paper); border-left:1px solid var(--line-strong); transform:translateX(100%); transition:transform .18s ease; z-index:21; padding:24px; overflow-y:auto;}
+  .slideover.open{transform:translateX(0);}
+  .slideover-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;}
+  .slideover-head h3{font-family:var(--serif); font-size:20px; margin:0 0 4px;}
+  .slideover-close{all:unset; cursor:pointer; color:var(--ink-faint); font-size:20px; line-height:1; padding:2px;}
+  .slideover-close:hover{color:var(--ink);}
+  .so-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px; gap:12px;}
+  .so-row .k{color:var(--ink-faint); flex:none;}
+  .so-row .v{font-weight:600; text-align:right;}
+  .so-actions{display:flex; gap:8px; margin-top:20px; flex-wrap:wrap;}
+  .so-actions .btn{flex:1;}
+
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:8px; font-size:13px; z-index:40; opacity:0; pointer-events:none; transition:opacity .2s;}
+  .toast.show{opacity:1;}
+
+  @media (max-width:980px){ .kpis{grid-template-columns:repeat(2,1fr);} .grid-2{grid-template-columns:1fr;} }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="mark">◆</div>
+    <h1>Campus School Console</h1>
+    <p>School Admin sign-in.</p>
+    <div id="login-error" class="error-box" style="display:none;"></div>
+    <div class="field"><label>Email</label><input id="login-email" type="email" value="admin@scholarsacademy.test"></div>
+    <div class="field"><label>Password</label><input id="login-password" type="password" value="ChangeMe123!"></div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%;">Log in</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="app">
+    <aside class="rail">
+      <div class="rail-brand">
+        <div class="rail-mono" id="rail-mono">SA</div>
+        <div>
+          <div class="rail-school-name" id="rail-school-name">School Console</div>
+          <div class="rail-school-sub">School Console</div>
+        </div>
+      </div>
+      <nav class="rail-nav">
+        <button class="rail-link active" data-view="dashboard"><span class="dot"></span>Dashboard</button>
+        <button class="rail-link" data-view="students"><span class="dot"></span>Students</button>
+        <button class="rail-link" data-view="staff"><span class="dot"></span>Staff</button>
+        <button class="rail-link" data-view="timetable"><span class="dot"></span>Timetable</button>
+        <button class="rail-link" data-view="fees"><span class="dot"></span>Fees</button>
+        <button class="rail-link" data-view="notices"><span class="dot"></span>Notices</button>
+      </nav>
+      <div class="rail-spacer"></div>
+      <div class="rail-foot">
+        <div class="rail-user">
+          <div class="rail-avatar" id="rail-avatar">?</div>
+          <div>
+            <div class="rail-user-name" id="rail-user-name">—</div>
+            <div class="rail-user-role">School Admin</div>
+          </div>
+        </div>
+        <button class="rail-logout" id="logout-btn">Log out</button>
+        <div class="rail-powered">◆ Powered by Campus</div>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="primary-action">+ Admit student</button>
+        </div>
+      </header>
+
+      <main class="scroll">
+
+        <!-- DASHBOARD -->
+        <section class="view active" id="view-dashboard">
+          <div class="kpis" id="dash-kpis"></div>
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-head"><h2>Fee collection — this school</h2><span class="hint">all invoices</span></div>
+              <div class="panel-body" id="dash-fees-chart"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Recent notices</h2></div>
+              <div class="panel-body"><ul class="notice-list" id="dash-notices"></ul></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STUDENTS -->
+        <section class="view" id="view-students">
+          <div class="filters" id="student-filters"><button class="chip active" data-filter="">All classes</button></div>
+          <div class="panel">
+            <div class="panel-body" style="padding-top:18px;">
+              <table><thead><tr><th>Admission No</th><th>Name</th><th>Section</th><th>Status</th></tr></thead><tbody id="students-body"></tbody></table>
+              <div class="empty-note" id="students-empty" style="display:none;">No students yet.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STAFF -->
+        <section class="view" id="view-staff">
+          <div class="panel">
+            <div class="panel-body" style="padding-top:18px;">
+              <table><thead><tr><th>Employee No</th><th>Name</th><th>Designation</th><th>Role</th></tr></thead><tbody id="staff-body"></tbody></table>
+              <div class="empty-note" id="staff-empty" style="display:none;">No staff yet.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TIMETABLE -->
+        <section class="view" id="view-timetable">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Setup</h2>
+              <span class="hint">years → classes → sections → subjects, then assign a teacher</span>
+            </div>
+            <div class="panel-body" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-sm" id="new-year-btn">+ Academic year</button>
+              <button class="btn btn-sm" id="new-class-btn">+ Class</button>
+              <button class="btn btn-sm" id="new-section-btn">+ Section</button>
+              <button class="btn btn-sm" id="new-subject-btn">+ Subject</button>
+              <button class="btn btn-sm" id="assign-teacher-btn">+ Assign teacher to class</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Weekly grid</h2>
+              <select id="section-select" style="border:1px solid var(--line-strong); background:var(--panel); color:var(--ink); border-radius:6px; padding:6px 10px; font-size:12.5px;"></select>
+            </div>
+            <div class="panel-body tt-wrap" id="timetable-grid"></div>
+          </div>
+        </section>
+
+        <!-- FEES -->
+        <section class="view" id="view-fees">
+          <div class="panel">
+            <div class="panel-head"><h2>Fee structures</h2><button class="btn btn-sm" id="new-fee-btn">+ New fee</button></div>
+            <div class="panel-body"><table><thead><tr><th>Class</th><th>Fee type</th><th>Amount</th><th>Due date</th><th></th></tr></thead><tbody id="fee-structures-body"></tbody></table></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Recent invoices</h2></div>
+            <div class="panel-body"><table><thead><tr><th>Student</th><th>Amount due</th><th>Status</th></tr></thead><tbody id="invoices-body"></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- NOTICES -->
+        <section class="view" id="view-notices">
+          <div class="panel">
+            <div class="panel-head"><h2>Post a notice</h2></div>
+            <div class="panel-body">
+              <div class="compose">
+                <input type="text" id="notice-title" placeholder="Title — e.g. Annual Sports Day schedule">
+                <textarea id="notice-body" placeholder="Write the notice…"></textarea>
+                <div class="compose-row">
+                  <select id="notice-scope">
+                    <option value="ALL">Audience: All</option>
+                    <option value="CLASS">Audience: One class</option>
+                  </select>
+                  <select id="notice-class-target" style="display:none;"></select>
+                  <button class="btn btn-primary" id="publish-notice-btn">Publish notice</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Published</h2></div>
+            <div class="panel-body"><ul class="notice-list" id="notices-list"></ul></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- Admit student modal -->
+<div class="modal-scrim" id="admit-scrim"><div class="modal">
+  <h3>Admit a student</h3>
+  <div id="admit-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Full name</label><input id="admit-name"></div>
+  <div class="field-grid">
+    <div class="field"><label>Email</label><input id="admit-email" type="email"></div>
+    <div class="field"><label>Password</label><input id="admit-password" type="password"></div>
+  </div>
+  <div class="field-grid">
+    <div class="field"><label>Date of birth</label><input id="admit-dob" type="date"></div>
+    <div class="field"><label>Admission No.</label><input id="admit-adm"></div>
+  </div>
+  <div class="field"><label>Section (optional)</label><select id="admit-section"><option value="">— none yet —</option></select></div>
+  <div class="modal-actions"><button class="btn" id="admit-cancel">Cancel</button><button class="btn btn-primary" id="admit-submit">Admit</button></div>
+</div></div>
+
+<!-- Add staff modal -->
+<div class="modal-scrim" id="staff-scrim"><div class="modal">
+  <h3>Add staff</h3>
+  <div id="staff-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Full name</label><input id="staff-name"></div>
+  <div class="field-grid">
+    <div class="field"><label>Email</label><input id="staff-email" type="email"></div>
+    <div class="field"><label>Password</label><input id="staff-password" type="password"></div>
+  </div>
+  <div class="field-grid">
+    <div class="field"><label>Employee No.</label><input id="staff-empno"></div>
+    <div class="field"><label>Role</label><select id="staff-role"><option value="TEACHER">Teacher</option><option value="ACCOUNTANT">Accountant</option></select></div>
+  </div>
+  <div class="field"><label>Designation</label><input id="staff-designation" placeholder="e.g. Senior Teacher — Mathematics"></div>
+  <div class="modal-actions"><button class="btn" id="staff-cancel">Cancel</button><button class="btn btn-primary" id="staff-submit">Add staff</button></div>
+</div></div>
+
+<!-- Academic year modal -->
+<div class="modal-scrim" id="year-scrim"><div class="modal">
+  <h3>New academic year</h3>
+  <div id="year-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Label</label><input id="year-label" placeholder="2026-2027"></div>
+  <div class="field-grid">
+    <div class="field"><label>Starts on</label><input id="year-start" type="date"></div>
+    <div class="field"><label>Ends on</label><input id="year-end" type="date"></div>
+  </div>
+  <div class="modal-actions"><button class="btn" id="year-cancel">Cancel</button><button class="btn btn-primary" id="year-submit">Create</button></div>
+</div></div>
+
+<!-- Class modal -->
+<div class="modal-scrim" id="class-scrim"><div class="modal">
+  <h3>New class</h3>
+  <div id="class-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Academic year</label><select id="class-year"></select></div>
+  <div class="field"><label>Name</label><input id="class-name" placeholder="Class 6"></div>
+  <div class="modal-actions"><button class="btn" id="class-cancel">Cancel</button><button class="btn btn-primary" id="class-submit">Create</button></div>
+</div></div>
+
+<!-- Section modal -->
+<div class="modal-scrim" id="section-scrim"><div class="modal">
+  <h3>New section</h3>
+  <div id="section-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Class</label><select id="section-class"></select></div>
+  <div class="field"><label>Name</label><input id="section-name" placeholder="A"></div>
+  <div class="modal-actions"><button class="btn" id="section-cancel">Cancel</button><button class="btn btn-primary" id="section-submit">Create</button></div>
+</div></div>
+
+<!-- Subject modal -->
+<div class="modal-scrim" id="subject-scrim"><div class="modal">
+  <h3>New subject</h3>
+  <div id="subject-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Name</label><input id="subject-name" placeholder="Mathematics"></div>
+  <div class="field"><label>Code (optional)</label><input id="subject-code" placeholder="MATH"></div>
+  <div class="modal-actions"><button class="btn" id="subject-cancel">Cancel</button><button class="btn btn-primary" id="subject-submit">Create</button></div>
+</div></div>
+
+<!-- Assign teacher modal -->
+<div class="modal-scrim" id="assign-scrim"><div class="modal">
+  <h3>Assign teacher to class</h3>
+  <div id="assign-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Class</label><select id="assign-class"></select></div>
+  <div class="field"><label>Subject</label><select id="assign-subject"></select></div>
+  <div class="field"><label>Teacher</label><select id="assign-teacher"></select></div>
+  <div class="modal-actions"><button class="btn" id="assign-cancel">Cancel</button><button class="btn btn-primary" id="assign-submit">Assign</button></div>
+</div></div>
+
+<!-- Timetable slot modal -->
+<div class="modal-scrim" id="slot-scrim"><div class="modal">
+  <h3>Add timetable slot</h3>
+  <div id="slot-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Class-Subject (class · subject · teacher)</label><select id="slot-classsubject"></select></div>
+  <div class="field-grid">
+    <div class="field"><label>Day</label><select id="slot-day"><option>SUN</option><option>MON</option><option>TUE</option><option>WED</option><option>THU</option><option>FRI</option><option>SAT</option></select></div>
+    <div class="field"><label>Room</label><input id="slot-room" placeholder="201"></div>
+  </div>
+  <div class="field-grid">
+    <div class="field"><label>Starts at</label><input id="slot-start" type="time" value="09:00"></div>
+    <div class="field"><label>Ends at</label><input id="slot-end" type="time" value="09:45"></div>
+  </div>
+  <div class="modal-actions"><button class="btn" id="slot-cancel">Cancel</button><button class="btn btn-primary" id="slot-submit">Add slot</button></div>
+</div></div>
+
+<!-- Fee structure modal -->
+<div class="modal-scrim" id="fee-scrim"><div class="modal">
+  <h3>New fee structure</h3>
+  <div id="fee-error" class="error-box" style="display:none;"></div>
+  <div class="field"><label>Class</label><select id="fee-class"></select></div>
+  <div class="field"><label>Academic year</label><select id="fee-year"></select></div>
+  <div class="field"><label>Fee type</label><input id="fee-type" placeholder="Tuition — Monthly"></div>
+  <div class="field-grid">
+    <div class="field"><label>Amount (BDT)</label><input id="fee-amount" type="number" value="1800"></div>
+    <div class="field"><label>Due on</label><input id="fee-due" type="date"></div>
+  </div>
+  <div class="modal-actions"><button class="btn" id="fee-cancel">Cancel</button><button class="btn btn-primary" id="fee-submit">Create</button></div>
+</div></div>
+
+<!-- Student detail slideover -->
+<div class="scrim" id="scrim"></div>
+<aside class="slideover" id="slideover">
+  <div class="slideover-head"><div><h3 id="so-name">—</h3><span class="pill pill-paid" id="so-status">Active</span></div><button class="slideover-close" id="so-close">×</button></div>
+  <div class="so-row"><span class="k">Admission no.</span><span class="v" id="so-adm">—</span></div>
+  <div class="so-row"><span class="k">Section</span><span class="v" id="so-section">—</span></div>
+  <div class="so-row"><span class="k">Attendance</span><span class="v" id="so-attendance">—</span></div>
+  <div class="so-actions"><button class="btn" id="so-guardian-btn">Link guardian</button></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = "http://localhost:3000/v1";
+let accessToken = sessionStorage.getItem("campus_school_token") || null;
+let state = { students: [], staff: [], years: [], classes: [], sections: [], subjects: [], classSubjects: [], feeStructures: [], invoices: [], notices: [], exams: [] };
+let activeStudentId = null;
+
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+
+async function api(path, { method="GET", body } = {}){
+  const headers = {"Content-Type":"application/json"};
+  if (accessToken) headers["Authorization"] = "Bearer " + accessToken;
+  const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok){
+    const msg = data && data.message ? (Array.isArray(data.message) ? data.message.join(", ") : data.message) : "Request failed";
+    throw new Error(msg);
+  }
+  return data && Object.prototype.hasOwnProperty.call(data,"data") ? data.data : data;
+}
+function fmtBdt(n){ return "৳" + Number(n).toLocaleString("en-IN"); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+// ---------- auth ----------
+async function doLogin(){
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errEl = document.getElementById("login-error");
+  errEl.style.display = "none";
+  try {
+    const result = await api("/auth/login", { method:"POST", body:{email,password} });
+    accessToken = result.accessToken;
+    const me = await api("/auth/me");
+    if (me.role !== "ADMIN") throw new Error("This console is for School Admin accounts only.");
+    sessionStorage.setItem("campus_school_token", accessToken);
+    enterApp(me);
+  } catch(e){ accessToken=null; errEl.textContent=e.message; errEl.style.display="block"; }
+}
+document.getElementById("login-btn").addEventListener("click", doLogin);
+document.getElementById("login-password").addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); });
+document.getElementById("logout-btn").addEventListener("click", ()=>{
+  accessToken=null; sessionStorage.removeItem("campus_school_token");
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-screen").style.display="flex";
+});
+
+function enterApp(me){
+  document.getElementById("rail-user-name").textContent = me.email.split("@")[0];
+  document.getElementById("rail-avatar").textContent = me.email[0].toUpperCase();
+  document.getElementById("rail-school-name").textContent = me.school ? me.school.name : "Campus";
+  document.getElementById("rail-mono").textContent = me.school ? me.school.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase() : "SC";
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="block";
+  loadEverything();
+}
+
+// ---------- load ----------
+async function loadEverything(){
+  try {
+    const [students, staff, years, classes, subjects, feeStructures, invoices, notices, exams] = await Promise.all([
+      api("/students"), api("/staff"), api("/academic-years"), api("/classes"), api("/subjects"),
+      api("/fee-structures"), api("/invoices"), api("/notices"), api("/exams"),
+    ]);
+    state.students = students; state.staff = staff; state.years = years; state.classes = classes;
+    state.subjects = subjects; state.feeStructures = feeStructures; state.invoices = invoices;
+    state.notices = notices; state.exams = exams;
+
+    // sections live under classes — fetch all, flatten
+    const sectionLists = await Promise.all(classes.map(c => api(`/classes/${c.id}/sections`)));
+    state.sections = sectionLists.flat().map((s, i) => ({ ...s, className: findClassName(s.classId) }));
+
+    let attendanceToday = [];
+    try { attendanceToday = await api(`/attendance?from=${todayStr()}&to=${todayStr()}`); } catch(_) {}
+    state.attendanceToday = attendanceToday;
+
+    renderDashboard();
+    renderStudentFilters();
+    renderStudents("");
+    renderStaff();
+    renderFeeStructures();
+    renderInvoices();
+    renderNotices();
+    populateTimetableSetup();
+  } catch(e){ toast("Could not load: " + e.message); }
+}
+function findClassName(classId){ const c = state.classes.find(c=>c.id===classId); return c ? c.name : "—"; }
+
+// ---------- dashboard ----------
+function renderDashboard(){
+  const present = state.attendanceToday.filter(a=>a.status==="PRESENT"||a.status==="LATE").length;
+  const totalAtt = state.attendanceToday.length;
+  const pct = totalAtt ? Math.round((present/totalAtt)*1000)/10 : null;
+
+  const paidInvoices = state.invoices.filter(i=>i.status==="PAID");
+  const totalDue = state.invoices.reduce((s,i)=>s+Number(i.amountDueBdt),0);
+  const totalPaid = paidInvoices.reduce((s,i)=>s+Number(i.amountDueBdt),0);
+
+  const upcoming = state.exams.filter(e=>new Date(e.startsOn) >= new Date(todayStr())).sort((a,b)=>a.startsOn.localeCompare(b.startsOn))[0];
+  const daysTo = upcoming ? Math.ceil((new Date(upcoming.startsOn)-new Date(todayStr()))/86400000) : null;
+
+  document.getElementById("dash-kpis").innerHTML = `
+    <div class="kpi"><div class="kpi-label">Today's attendance</div><div class="kpi-value">${pct===null?"—":pct+"%"}</div><div class="kpi-sub">${totalAtt} periods recorded</div></div>
+    <div class="kpi"><div class="kpi-label">Fees collected</div><div class="kpi-value">${fmtBdt(totalPaid)}</div><div class="kpi-sub">of ${fmtBdt(totalDue)} due</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalDue?Math.round(totalPaid/totalDue*100):0}%;"></div></div></div>
+    <div class="kpi"><div class="kpi-label">Total students</div><div class="kpi-value">${state.students.length}</div><div class="kpi-sub">${state.staff.length} staff</div></div>
+    <div class="kpi"><div class="kpi-label">Next exam</div><div class="kpi-value">${daysTo===null?"—":daysTo+"d"}</div><div class="kpi-sub">${upcoming?upcoming.name:"none scheduled"}</div></div>
+  `;
+
+  const byStatus = { PENDING:0, PAID:0, OVERDUE:0 };
+  state.invoices.forEach(i => byStatus[i.status] = (byStatus[i.status]||0) + 1);
+  const max = Math.max(byStatus.PAID, byStatus.PENDING, byStatus.OVERDUE, 1);
+  document.getElementById("dash-fees-chart").innerHTML = `
+    <div style="display:grid; gap:10px;">
+      ${[["Paid",byStatus.PAID,"var(--success)"],["Due",byStatus.PENDING,"var(--warning)"],["Overdue",byStatus.OVERDUE,"var(--danger)"]]
+        .map(([l,n,c])=>`<div style="display:grid; grid-template-columns:70px 1fr 30px; align-items:center; gap:10px; font-size:12.5px;">
+          <span class="muted">${l}</span>
+          <div style="height:9px;border-radius:99px;background:var(--line);overflow:hidden;"><div style="height:100%;width:${Math.round(n/max*100)}%;background:${c};"></div></div>
+          <span style="font-family:var(--mono); text-align:right;">${n}</span></div>`).join("")}
+    </div>`;
+
+  document.getElementById("dash-notices").innerHTML = state.notices.slice(0,4).map(n => `
+    <li class="notice-item"><div class="notice-title">${n.title}</div><div class="notice-meta">${n.audienceScope} · ${n.postedAt.substring(0,10)}</div></li>
+  `).join("") || `<li class="empty-note">No notices yet.</li>`;
+}
+
+// ---------- students ----------
+function renderStudentFilters(){
+  const host = document.getElementById("student-filters");
+  host.innerHTML = `<button class="chip active" data-filter="">All classes</button>` +
+    state.classes.map(c => `<button class="chip" data-filter="${c.id}">${c.name}</button>`).join("");
+  host.querySelectorAll(".chip").forEach(chip => chip.addEventListener("click", () => {
+    host.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+    chip.classList.add("active");
+    renderStudents(chip.dataset.filter);
+  }));
+}
+async function renderStudents(classId){
+  const list = classId ? await api(`/students?classId=${classId}`) : state.students;
+  const body = document.getElementById("students-body");
+  document.getElementById("students-empty").style.display = list.length ? "none" : "block";
+  body.innerHTML = list.map(s => `
+    <tr class="clickable" data-id="${s.userId}">
+      <td class="num" style="text-align:left;">${s.admissionNo}</td>
+      <td class="name">${s.user.fullName}</td>
+      <td class="muted">${s.section ? s.section.class.name + " " + s.section.name : "— unassigned —"}</td>
+      <td><span class="pill pill-paid">${s.user.status}</span></td>
+    </tr>`).join("");
+  body.querySelectorAll("tr").forEach(tr => tr.addEventListener("click", () => openStudentSlideover(tr.dataset.id)));
+}
+async function openStudentSlideover(userId){
+  activeStudentId = userId;
+  const s = state.students.find(s=>s.userId===userId);
+  document.getElementById("so-name").textContent = s.user.fullName;
+  document.getElementById("so-adm").textContent = s.admissionNo;
+  document.getElementById("so-section").textContent = s.section ? s.section.class.name + " " + s.section.name : "— unassigned —";
+  document.getElementById("so-attendance").textContent = "…";
+  document.getElementById("slideover").classList.add("open");
+  document.getElementById("scrim").classList.add("open");
+  try {
+    const summary = await api(`/students/${userId}/attendance-summary`);
+    document.getElementById("so-attendance").textContent = summary.presentPercentage===null ? "No records yet" : summary.presentPercentage + "% present";
+  } catch(e){ document.getElementById("so-attendance").textContent = "—"; }
+}
+document.getElementById("so-close").addEventListener("click", closeSlideover);
+document.getElementById("scrim").addEventListener("click", closeSlideover);
+function closeSlideover(){ document.getElementById("slideover").classList.remove("open"); document.getElementById("scrim").classList.remove("open"); }
+document.getElementById("so-guardian-btn").addEventListener("click", async () => {
+  const name = prompt("Guardian full name:");
+  if (!name) return;
+  const email = prompt("Guardian email:");
+  if (!email) return;
+  const password = prompt("Temporary password (min 8 chars):");
+  if (!password) return;
+  const relation = (prompt("Relation (FATHER/MOTHER/LEGAL_GUARDIAN/OTHER):", "MOTHER") || "MOTHER").toUpperCase();
+  try {
+    await api(`/students/${activeStudentId}/guardians`, { method:"POST", body:{ relation, fullName:name, email, password } });
+    toast("Guardian linked");
+  } catch(e){ toast(e.message); }
+});
+
+// ---------- staff ----------
+function renderStaff(){
+  const body = document.getElementById("staff-body");
+  document.getElementById("staff-empty").style.display = state.staff.length ? "none" : "block";
+  body.innerHTML = state.staff.map(s => `
+    <tr><td class="num" style="text-align:left;">${s.employeeNo}</td><td class="name">${s.user.fullName}</td>
+    <td class="muted">${s.designation}</td><td class="muted">${s.user.role}</td></tr>`).join("");
+}
+
+// ---------- timetable setup ----------
+function populateTimetableSetup(){
+  document.getElementById("admit-section").innerHTML = `<option value="">— none yet —</option>` +
+    state.sections.map(s => `<option value="${s.id}">${s.className} ${s.name}</option>`).join("");
+  document.getElementById("class-year").innerHTML = state.years.map(y => `<option value="${y.id}">${y.label}</option>`).join("");
+  document.getElementById("section-class").innerHTML = state.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  document.getElementById("assign-class").innerHTML = state.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  document.getElementById("assign-subject").innerHTML = state.subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+  document.getElementById("assign-teacher").innerHTML = state.staff.filter(s=>s.user.role==="TEACHER").map(s => `<option value="${s.userId}">${s.user.fullName}</option>`).join("");
+  document.getElementById("fee-class").innerHTML = state.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  document.getElementById("fee-year").innerHTML = state.years.map(y => `<option value="${y.id}">${y.label}</option>`).join("");
+  document.getElementById("notice-class-target").innerHTML = state.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+
+  const sectionSelect = document.getElementById("section-select");
+  sectionSelect.innerHTML = state.sections.map(s => `<option value="${s.id}">${s.className} ${s.name}</option>`).join("") || `<option value="">— no sections yet —</option>`;
+  if (state.sections.length) loadTimetableGrid(sectionSelect.value);
+  sectionSelect.addEventListener("change", () => loadTimetableGrid(sectionSelect.value));
+}
+
+const DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+async function loadTimetableGrid(sectionId){
+  const host = document.getElementById("timetable-grid");
+  if (!sectionId){ host.innerHTML = `<p class="empty-note">Create a class and section first.</p>`; return; }
+  const slots = await api(`/sections/${sectionId}/timetable`);
+  const byDay = {};
+  slots.forEach(s => { (byDay[s.dayOfWeek] ??= []).push(s); });
+  const usedDays = DAYS.filter(d => byDay[d] && byDay[d].length);
+  const daysToShow = usedDays.length ? usedDays : ["SUN","MON","TUE","WED","THU"];
+
+  // refresh class-subject options for the "add slot" modal, scoped to any class (simple v1)
+  const classSubjectOptions = [];
+  for (const cs of state.classSubjects) classSubjectOptions.push(cs);
+
+  if (!slots.length){
+    host.innerHTML = `<p class="empty-note">No timetable slots yet for this section. Use "Assign teacher to class" then add a slot.</p>
+      <button class="btn btn-sm" id="add-slot-btn">+ Add slot</button>`;
+  } else {
+    const maxPeriods = Math.max(...daysToShow.map(d => (byDay[d]||[]).length), 1);
+    let rows = "";
+    for (let p = 0; p < maxPeriods; p++){
+      rows += "<tr>" + `<td class="tt-period">Period ${p+1}</td>` + daysToShow.map(d => {
+        const slot = (byDay[d]||[])[p];
+        return slot
+          ? `<td class="tt-cell"><div class="tt-subject">${slot.classSubject.subject.name}</div><div class="tt-teacher">${slot.startsAt}-${slot.endsAt}${slot.room?' · '+slot.room:''}</div></td>`
+          : `<td class="tt-empty">—</td>`;
+      }).join("") + "</tr>";
+    }
+    host.innerHTML = `<table class="timetable"><thead><tr><th>Period</th>${daysToShow.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
+      <div style="margin-top:12px;"><button class="btn btn-sm" id="add-slot-btn">+ Add slot</button></div>`;
+  }
+  document.getElementById("add-slot-btn").addEventListener("click", () => openSlotModal(sectionId));
+}
+
+async function openSlotModal(sectionId){
+  // class-subjects aren't separately listed by the API; rebuild from classes+subjects+assign history isn't available,
+  // so we ask the admin to pick class+subject and resolve server-side teacher via assignment already made.
+  const select = document.getElementById("slot-classsubject");
+  select.innerHTML = `<option value="">Use "Assign teacher to class" first, then refresh</option>`;
+  try {
+    // Attempt: fetch sections' own class to filter relevant class-subjects via timetable creation itself.
+    // We don't have a direct "list class-subjects" endpoint, so take the last-known assignment from state.lastAssignment if present.
+    if (state.lastClassSubjectId) {
+      select.innerHTML = `<option value="${state.lastClassSubjectId}">${state.lastAssignmentLabel || "Most recent assignment"}</option>`;
+    }
+  } catch(_) {}
+  document.getElementById("slot-error").style.display = "none";
+  document.getElementById("slot-scrim").classList.add("open");
+  document.getElementById("slot-scrim").dataset.sectionId = sectionId;
+}
+
+// ---------- fees ----------
+function renderFeeStructures(){
+  document.getElementById("fee-structures-body").innerHTML = state.feeStructures.map(f => `
+    <tr><td class="name">${f.class.name}</td><td class="muted">${f.feeType}</td><td class="num">${fmtBdt(f.amountBdt)}</td>
+    <td class="muted">${f.dueOn.substring(0,10)}</td><td><button class="btn btn-sm" data-genid="${f.id}">Generate invoices</button></td></tr>`).join("")
+    || `<tr><td colspan="5" class="empty-note">No fee structures yet.</td></tr>`;
+  document.querySelectorAll("[data-genid]").forEach(btn => btn.addEventListener("click", async () => {
+    try {
+      const result = await api(`/fee-structures/${btn.dataset.genid}/generate-invoices`, { method:"POST" });
+      toast(`Generated ${result.created} invoice(s)`);
+      state.invoices = await api("/invoices");
+      renderInvoices();
+    } catch(e){ toast(e.message); }
+  }));
+}
+function renderInvoices(){
+  const pillFor = { PAID:"pill-paid", PENDING:"pill-due", OVERDUE:"pill-overdue" };
+  document.getElementById("invoices-body").innerHTML = state.invoices.slice(0,12).map(i => `
+    <tr><td class="name">${i.student && i.student.user ? i.student.user.fullName : i.studentId}</td>
+    <td class="num">${fmtBdt(i.amountDueBdt)}</td>
+    <td><span class="pill ${pillFor[i.status]||'pill-due'}">${i.status}</span></td></tr>`).join("")
+    || `<tr><td colspan="3" class="empty-note">No invoices yet.</td></tr>`;
+}
+
+// ---------- notices ----------
+function renderNotices(){
+  document.getElementById("notices-list").innerHTML = state.notices.map(n => `
+    <li class="notice-item"><div class="notice-title">${n.title}</div><div class="notice-meta">${n.audienceScope} · ${n.postedAt.substring(0,10)}</div></li>
+  `).join("") || `<li class="empty-note">No notices yet.</li>`;
+}
+document.getElementById("notice-scope").addEventListener("change", (e) => {
+  document.getElementById("notice-class-target").style.display = e.target.value === "CLASS" ? "block" : "none";
+});
+document.getElementById("publish-notice-btn").addEventListener("click", async () => {
+  const scope = document.getElementById("notice-scope").value;
+  const body = { title: document.getElementById("notice-title").value.trim(), body: document.getElementById("notice-body").value.trim(), audienceScope: scope };
+  if (scope === "CLASS") body.targetClassId = document.getElementById("notice-class-target").value;
+  try {
+    await api("/notices", { method:"POST", body });
+    document.getElementById("notice-title").value = ""; document.getElementById("notice-body").value = "";
+    toast("Notice published");
+    state.notices = await api("/notices");
+    renderNotices(); renderDashboard();
+  } catch(e){ toast(e.message); }
+});
+
+// ---------- nav ----------
+const titles = { dashboard:"Dashboard", students:"Students", staff:"Staff", timetable:"Timetable", fees:"Fees", notices:"Notices" };
+const actionLabel = { dashboard:"+ Admit student", students:"+ Admit student", staff:"+ Add staff", timetable:null, fees:null, notices:null };
+document.querySelectorAll(".rail-link").forEach(link => {
+  link.addEventListener("click", () => {
+    document.querySelectorAll(".rail-link").forEach(l=>l.classList.remove("active"));
+    link.classList.add("active");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    document.getElementById("view-"+link.dataset.view).classList.add("active");
+    document.getElementById("page-title").textContent = titles[link.dataset.view];
+    const action = actionLabel[link.dataset.view];
+    document.getElementById("primary-action").hidden = !action;
+    if (action) document.getElementById("primary-action").textContent = action;
+  });
+});
+document.getElementById("primary-action").addEventListener("click", () => {
+  const activeView = document.querySelector(".rail-link.active").dataset.view;
+  if (activeView === "staff") openModal("staff-scrim");
+  else openModal("admit-scrim");
+});
+
+function openModal(id){ document.getElementById(id).classList.add("open"); document.getElementById(id.replace("-scrim","-error") ).style.display="none"; }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+[["admit-cancel","admit-scrim"],["staff-cancel","staff-scrim"],["year-cancel","year-scrim"],["class-cancel","class-scrim"],
+ ["section-cancel","section-scrim"],["subject-cancel","subject-scrim"],["assign-cancel","assign-scrim"],
+ ["slot-cancel","slot-scrim"],["fee-cancel","fee-scrim"]].forEach(([btn,modal]) =>
+  document.getElementById(btn).addEventListener("click", () => closeModal(modal)));
+
+document.getElementById("new-year-btn").addEventListener("click", () => openModal("year-scrim"));
+document.getElementById("new-class-btn").addEventListener("click", () => openModal("class-scrim"));
+document.getElementById("new-section-btn").addEventListener("click", () => openModal("section-scrim"));
+document.getElementById("new-subject-btn").addEventListener("click", () => openModal("subject-scrim"));
+document.getElementById("assign-teacher-btn").addEventListener("click", () => openModal("assign-scrim"));
+document.getElementById("new-fee-btn").addEventListener("click", () => openModal("fee-scrim"));
+
+// ---------- modal submits ----------
+document.getElementById("admit-submit").addEventListener("click", async () => {
+  const body = {
+    fullName: document.getElementById("admit-name").value.trim(),
+    email: document.getElementById("admit-email").value.trim(),
+    password: document.getElementById("admit-password").value,
+    dob: document.getElementById("admit-dob").value,
+    admissionNo: document.getElementById("admit-adm").value.trim(),
+    sectionId: document.getElementById("admit-section").value || undefined,
+  };
+  try { await api("/students", { method:"POST", body }); closeModal("admit-scrim"); toast("Student admitted"); await loadEverything(); }
+  catch(e){ const el=document.getElementById("admit-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("staff-submit").addEventListener("click", async () => {
+  const body = {
+    fullName: document.getElementById("staff-name").value.trim(),
+    email: document.getElementById("staff-email").value.trim(),
+    password: document.getElementById("staff-password").value,
+    employeeNo: document.getElementById("staff-empno").value.trim(),
+    designation: document.getElementById("staff-designation").value.trim(),
+    role: document.getElementById("staff-role").value,
+  };
+  try { await api("/staff", { method:"POST", body }); closeModal("staff-scrim"); toast("Staff added"); await loadEverything(); }
+  catch(e){ const el=document.getElementById("staff-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("year-submit").addEventListener("click", async () => {
+  const body = { label: document.getElementById("year-label").value.trim(), startsOn: document.getElementById("year-start").value, endsOn: document.getElementById("year-end").value };
+  try { await api("/academic-years", { method:"POST", body }); closeModal("year-scrim"); toast("Academic year created"); await loadEverything(); }
+  catch(e){ const el=document.getElementById("year-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("class-submit").addEventListener("click", async () => {
+  const body = { academicYearId: document.getElementById("class-year").value, name: document.getElementById("class-name").value.trim() };
+  try { await api("/classes", { method:"POST", body }); closeModal("class-scrim"); toast("Class created"); await loadEverything(); }
+  catch(e){ const el=document.getElementById("class-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("section-submit").addEventListener("click", async () => {
+  const classId = document.getElementById("section-class").value;
+  const body = { name: document.getElementById("section-name").value.trim() };
+  try { await api(`/classes/${classId}/sections`, { method:"POST", body }); closeModal("section-scrim"); toast("Section created"); await loadEverything(); }
+  catch(e){ const el=document.getElementById("section-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("subject-submit").addEventListener("click", async () => {
+  const body = { name: document.getElementById("subject-name").value.trim(), code: document.getElementById("subject-code").value.trim() || undefined };
+  try { await api("/subjects", { method:"POST", body }); closeModal("subject-scrim"); toast("Subject created"); await loadEverything(); }
+  catch(e){ const el=document.getElementById("subject-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("assign-submit").addEventListener("click", async () => {
+  const classId = document.getElementById("assign-class").value;
+  const body = { subjectId: document.getElementById("assign-subject").value, teacherId: document.getElementById("assign-teacher").value };
+  try {
+    const result = await api(`/classes/${classId}/subjects`, { method:"POST", body });
+    state.lastClassSubjectId = result.id;
+    state.lastAssignmentLabel = `${result.subject.name} — ${result.teacher.fullName}`;
+    closeModal("assign-scrim"); toast("Teacher assigned");
+  } catch(e){ const el=document.getElementById("assign-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("slot-submit").addEventListener("click", async () => {
+  const sectionId = document.getElementById("slot-scrim").dataset.sectionId;
+  const body = {
+    classSubjectId: document.getElementById("slot-classsubject").value,
+    dayOfWeek: document.getElementById("slot-day").value,
+    startsAt: document.getElementById("slot-start").value,
+    endsAt: document.getElementById("slot-end").value,
+    room: document.getElementById("slot-room").value.trim() || undefined,
+  };
+  try {
+    await api(`/sections/${sectionId}/timetable`, { method:"POST", body });
+    closeModal("slot-scrim"); toast("Slot added");
+    loadTimetableGrid(sectionId);
+  } catch(e){ const el=document.getElementById("slot-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+document.getElementById("fee-submit").addEventListener("click", async () => {
+  const body = {
+    classId: document.getElementById("fee-class").value,
+    academicYearId: document.getElementById("fee-year").value,
+    feeType: document.getElementById("fee-type").value.trim(),
+    amountBdt: Number(document.getElementById("fee-amount").value),
+    dueOn: document.getElementById("fee-due").value,
+  };
+  try { await api("/fee-structures", { method:"POST", body }); closeModal("fee-scrim"); toast("Fee structure created"); state.feeStructures = await api("/fee-structures"); renderFeeStructures(); }
+  catch(e){ const el=document.getElementById("fee-error"); el.textContent=e.message; el.style.display="block"; }
+});
+
+// ---------- boot ----------
+(async function boot(){
+  if (accessToken){
+    try {
+      const me = await api("/auth/me");
+      if (me.role === "ADMIN") { enterApp(me); return; }
+    } catch(_) {}
+    accessToken = null; sessionStorage.removeItem("campus_school_token");
+  }
+})();
+</script>
+</body>
+</html>
