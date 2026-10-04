@@ -62,18 +62,19 @@ killed the fabricated "schools grown over 6 months" chart on Overview:
 there's no historical snapshot endpoint, so it's real current-state
 counts only.
 
-## Known gap found while building this
+## Known gap, fixed (2026-10-05)
 
-**No way to list existing class-subject assignments.** The Timetable
-tab's "+ Add slot" modal needs to offer a class-subject to attach the
-slot to, but the backend has no `GET` for `ClassSubject` rows — only
-`POST /classes/:id/subjects` to create one. The workaround here
-(`state.lastClassSubjectId`, set only right after you *just* used
-"Assign teacher to class") works for the one-sitting setup flow this
-was tested with, but means the dropdown is empty if you navigate away
-and come back to add a slot for an older assignment. The real fix is a
-`GET /classes/:id/subjects` (or similar) endpoint — not built yet,
-flagged here rather than silently left broken.
+**No way to list existing class-subject assignments** — the Timetable
+tab's "+ Add slot" modal could only offer the one class-subject just
+assigned in the same browser session (`state.lastClassSubjectId`), so
+the dropdown was empty if you navigated away and came back to add a
+slot for an older assignment. Fixed by adding
+`GET /classes/:classId/subjects` to the backend
+(`ClassSubjectsService.listForClass`) and having `openSlotModal` fetch
+it fresh every time the modal opens, keyed off the section's class —
+verified in-browser to list every assignment for a class (Mathematics
+and Science, both taught by Kamal Hossain, for Class 6), not just the
+most recent one.
 
 ## Running locally
 

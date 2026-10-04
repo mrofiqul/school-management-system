@@ -464,7 +464,7 @@
 <script>
 const API_BASE = "http://localhost:3000/v1";
 let accessToken = sessionStorage.getItem("campus_school_token") || null;
-let state = { students: [], staff: [], years: [], classes: [], sections: [], subjects: [], classSubjects: [], feeStructures: [], invoices: [], notices: [], exams: [] };
+let state = { students: [], staff: [], years: [], classes: [], sections: [], subjects: [], feeStructures: [], invoices: [], notices: [], exams: [] };
 let activeStudentId = null;
 
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
@@ -679,10 +679,6 @@ async function loadTimetableGrid(sectionId){
   const usedDays = DAYS.filter(d => byDay[d] && byDay[d].length);
   const daysToShow = usedDays.length ? usedDays : ["SUN","MON","TUE","WED","THU"];
 
-  // refresh class-subject options for the "add slot" modal, scoped to any class (simple v1)
-  const classSubjectOptions = [];
-  for (const cs of state.classSubjects) classSubjectOptions.push(cs);
-
   if (!slots.length){
     host.innerHTML = `<p class="empty-note">No timetable slots yet for this section. Use "Assign teacher to class" then add a slot.</p>
       <button class="btn btn-sm" id="add-slot-btn">+ Add slot</button>`;
@@ -704,17 +700,17 @@ async function loadTimetableGrid(sectionId){
 }
 
 async function openSlotModal(sectionId){
-  // class-subjects aren't separately listed by the API; rebuild from classes+subjects+assign history isn't available,
-  // so we ask the admin to pick class+subject and resolve server-side teacher via assignment already made.
   const select = document.getElementById("slot-classsubject");
-  select.innerHTML = `<option value="">Use "Assign teacher to class" first, then refresh</option>`;
+  select.innerHTML = `<option value="">Loading…</option>`;
+  const section = state.sections.find(s => s.id === sectionId);
   try {
-    // Attempt: fetch sections' own class to filter relevant class-subjects via timetable creation itself.
-    // We don't have a direct "list class-subjects" endpoint, so take the last-known assignment from state.lastAssignment if present.
-    if (state.lastClassSubjectId) {
-      select.innerHTML = `<option value="${state.lastClassSubjectId}">${state.lastAssignmentLabel || "Most recent assignment"}</option>`;
-    }
-  } catch(_) {}
+    const assignments = section ? await api(`/classes/${section.classId}/subjects`) : [];
+    select.innerHTML = assignments.length
+      ? assignments.map(a => `<option value="${a.id}">${a.subject.name} — ${a.teacher.fullName}</option>`).join("")
+      : `<option value="">Use "Assign teacher to class" first, then refresh</option>`;
+  } catch(e) {
+    select.innerHTML = `<option value="">Use "Assign teacher to class" first, then refresh</option>`;
+  }
   document.getElementById("slot-error").style.display = "none";
   document.getElementById("slot-scrim").classList.add("open");
   document.getElementById("slot-scrim").dataset.sectionId = sectionId;
@@ -857,9 +853,7 @@ document.getElementById("assign-submit").addEventListener("click", async () => {
   const classId = document.getElementById("assign-class").value;
   const body = { subjectId: document.getElementById("assign-subject").value, teacherId: document.getElementById("assign-teacher").value };
   try {
-    const result = await api(`/classes/${classId}/subjects`, { method:"POST", body });
-    state.lastClassSubjectId = result.id;
-    state.lastAssignmentLabel = `${result.subject.name} — ${result.teacher.fullName}`;
+    await api(`/classes/${classId}/subjects`, { method:"POST", body });
     closeModal("assign-scrim"); toast("Teacher assigned");
   } catch(e){ const el=document.getElementById("assign-error"); el.textContent=e.message; el.style.display="block"; }
 });

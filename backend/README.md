@@ -145,6 +145,19 @@ afterward. What *was* caught, during schema design rather than testing:
   Academics needed a teacher to assign to a class — filled in before any
   of the new modules could be tested at all.
 
+### Round 3 — closing a gap flagged by the admin web app
+
+While wiring up the School Console's Timetable tab (see
+`admin-web/README.md`), it became clear there was no way to list
+existing `ClassSubject` assignments — only `POST /classes/:id/subjects`
+to create one. The "+ Add slot" modal had been working around this by
+remembering just the one assignment made earlier in the same browser
+session, which broke the moment you navigated away and came back.
+Fixed by adding `ClassSubjectsService.listForClass` and a matching
+`GET /classes/:classId/subjects` route; verified against the two live
+assignments from earlier testing (Mathematics and Science, both taught
+by Kamal Hossain, Class 6) before wiring the frontend to it.
+
 One operational note, not a code issue: `prisma migrate dev` refuses to
 run in this non-interactive environment whenever it has a warning to show
 (here, a new unique constraint on `student_invoices`), even with

@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -14,6 +14,11 @@ import { AssignClassSubjectDto } from './dto/assign-class-subject.dto';
 @Controller('classes/:classId/subjects')
 export class ClassSubjectsController {
   constructor(private service: ClassSubjectsService) {}
+
+  @Get()
+  list(@CurrentUser() user: AuthenticatedUser, @Param('classId') classId: string) {
+    return this.service.listForClass(user.schoolId!, classId);
+  }
 
   @Post()
   assign(
