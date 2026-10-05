@@ -89,27 +89,42 @@ Both apps point at `http://localhost:3000` (hardcoded `API_BASE` at the
 top of each `<script>`) — the backend has to be running locally; see
 `../backend/README.md`.
 
-## Deploying to InfinityFree
+## Deployed to InfinityFree — UI loads, data doesn't (yet)
 
-Live at **`campustime.infinityfreeapp.com`** — a subdomain on your
-InfinityFree account, separate from `bakibondhu.infinityfreeapp.com`.
-The backend stays on `localhost` for now, so the deployed copy only
-actually loads data when *your own* browser, on *your own* machine, can
-reach `http://localhost:3000`. It's a real, working deployment of the
-frontend; it just isn't usable by anyone but you until the backend has
-a public home too.
+Live at **`campustime.infinityfreeapp.com`** — `owner/` and `school/`
+both uploaded and rendering correctly (verified 2026-10-05, after
+fixing a "missing htdocs directory" issue on InfinityFree's side via
+their dashboard's "Recreate Directory" action).
 
-Upload steps (all in your InfinityFree account — this needs your login,
-which I never ask for or handle):
+**The data layer doesn't work yet, and it's not a config problem — it's
+a browser security boundary.** The original plan here was "it'll load
+data when *your* browser, on *your* machine, can reach
+`http://localhost:3000`." Tested for real (not just assumed) on
+2026-10-05: the login request from `https://campustime.infinityfreeapp.com`
+to `http://localhost:3000` just hangs — pending forever, no response,
+no JS error. That's Chrome's **Private Network Access** policy: a
+public HTTPS origin is blocked from calling a private address
+(`localhost` included) unless the target server opts in with an
+`Access-Control-Allow-Private-Network: true` preflight response, which
+this backend doesn't send. No CORS header change fixes this — it's a
+hard browser rule, enforced the same way on every machine, not just
+this one.
+
+**What this means in practice:** the deployed site is real and correctly
+built, but it cannot ever show live data while the backend stays on
+plain `localhost` HTTP — not for you, not for anyone. The only way
+past this is giving the backend a real, public home (ideally HTTPS).
+Once that exists, change the one `API_BASE` line at the top of each
+file's `<script>` to that URL and re-upload — nothing else in either
+app needs to change.
+
+Upload steps, for reference (already done once, but here if re-deploying):
 
 1. Log into the InfinityFree control panel for `campustime.infinityfreeapp.com`.
-2. Open its File Manager (or connect via FTP) and go to `htdocs/`.
-3. Upload `admin-web-deploy.zip` (sent earlier in this conversation —
-   contains `owner/` and `school/`), then use File Manager's "Extract"
-   on it. You should end up with `htdocs/owner/` and `htdocs/school/`.
+2. If the dashboard's Health Check says the website directory is
+   missing, click **Recreate Directory** first — uploads silently fail
+   otherwise, regardless of which tool you use.
+3. Open its File Manager, go to `htdocs/`, create `owner/` and `school/`
+   folders, and upload each app's `index.html` into its folder.
 4. Visit `https://campustime.infinityfreeapp.com/owner/` and
    `https://campustime.infinityfreeapp.com/school/` to confirm both load.
-
-When the backend gets real hosting later, change the one `API_BASE`
-line at the top of each file's `<script>` to that URL and re-upload —
-nothing else in either app needs to change.
