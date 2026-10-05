@@ -91,24 +91,24 @@ top of each `<script>`) — the backend has to be running locally; see
 
 ## Deploying to InfinityFree
 
-Per your choice: a new, separate InfinityFree subdomain (not touching
-`bakibondhu.infinityfreeapp.com`), with the backend staying on
-localhost for now — so a deployed copy only actually loads data when
-*your own* browser, on *your own* machine, can reach
-`http://localhost:3000`. It's a real, working deployment of the
+Live at **`campustime.infinityfreeapp.com`** — a subdomain on your
+InfinityFree account, separate from `bakibondhu.infinityfreeapp.com`.
+The backend stays on `localhost` for now, so the deployed copy only
+actually loads data when *your own* browser, on *your own* machine, can
+reach `http://localhost:3000`. It's a real, working deployment of the
 frontend; it just isn't usable by anyone but you until the backend has
 a public home too.
 
-Steps (all in your InfinityFree account — nothing here needs
-credentials from me):
+Upload steps (all in your InfinityFree account — this needs your login,
+which I never ask for or handle):
 
-1. In the vPanel, create a new subdomain, e.g. `campus-admin` →
-   `campus-admin.infinityfreeapp.com`.
-2. Open its File Manager (or connect via FTP) and upload everything
-   under `admin-web/` to that subdomain's `htdocs/` root, preserving
-   the `owner/` and `school/` folders.
-3. Visit `https://campus-admin.infinityfreeapp.com/owner/` and
-   `https://campus-admin.infinityfreeapp.com/school/`.
+1. Log into the InfinityFree control panel for `campustime.infinityfreeapp.com`.
+2. Open its File Manager (or connect via FTP) and go to `htdocs/`.
+3. Upload `admin-web-deploy.zip` (sent earlier in this conversation —
+   contains `owner/` and `school/`), then use File Manager's "Extract"
+   on it. You should end up with `htdocs/owner/` and `htdocs/school/`.
+4. Visit `https://campustime.infinityfreeapp.com/owner/` and
+   `https://campustime.infinityfreeapp.com/school/` to confirm both load.
 
 When the backend gets real hosting later, change the one `API_BASE`
 line at the top of each file's `<script>` to that URL and re-upload —
