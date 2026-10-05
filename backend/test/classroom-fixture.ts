@@ -115,3 +115,28 @@ export async function buildClassroomFixture(app: INestApplication, adminToken: s
     studentToken,
   };
 }
+
+export interface LinkedParent {
+  parentId: string;
+  parentToken: string;
+}
+
+/** Creates a new Parent account and links it as a guardian of the given student. */
+export async function linkParent(
+  app: INestApplication,
+  adminToken: string,
+  studentId: string,
+): Promise<LinkedParent> {
+  const suffix = randomUUID();
+  const parentEmail = `parent-${suffix}@fixture.example`;
+  const parentPassword = 'ChangeMe123!';
+
+  const link = await request(app.getHttpServer())
+    .post(`/v1/students/${studentId}/guardians`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ relation: 'MOTHER', fullName: 'Test Parent', email: parentEmail, password: parentPassword })
+    .expect(201);
+
+  const parentToken = await login(app, parentEmail, parentPassword);
+  return { parentId: link.body.data.parentId as string, parentToken };
+}

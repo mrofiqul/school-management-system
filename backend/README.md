@@ -220,10 +220,8 @@ code specifically:
 - Timetable conflict detection (same teacher or section double-booked) is
   not implemented — `TimetableService.create` will happily create
   overlapping slots. Flagged in `dto/update-timetable-slot.dto.ts`.
-- Automated coverage is a start, not comprehensive — see "Testing" below.
-  Auth, tenant isolation, Students, Attendance, and Exams are locked in;
-  Fees and Communication are still only verified by hand (see the
-  "Status" section above).
+- Automated coverage now spans every resource group except Platform
+  (Super Admin schools/plans) — see "Testing" below.
 
 ## Testing
 
@@ -273,10 +271,26 @@ What's covered:
   roster-membership validations, and the same ownership check
   (`assertCanAccessStudent`) applied at a different call site
   (`reportCard`) than the one Attendance exercises.
+- **`test/fees.e2e-spec.ts`** — generate invoice → parent checkout →
+  settle via the signed mock webhook, a retried webhook callback being a
+  no-op, generating invoices twice not double-billing, a partial manual
+  payment not settling early, and the same Student/Parent ownership
+  rules applied to invoices.
+- **`test/communication.e2e-spec.ts`** — all four Notice audience scopes
+  (ALL/CLASS/SECTION/ROLE) reaching only who they should, a Parent's
+  view following their linked child's class/section, Teacher↔Parent
+  messaging including a thread filter, a cross-school message being
+  rejected, and every role gate (STUDENT can't post a notice or send a
+  message).
 - **`test/classroom-fixture.ts`** isn't a spec — it's the shared setup
-  (class, section, subject, a real teacher, a real student) both of the
-  above build on, so neither file re-derives that chain by hand.
+  (class, section, subject, a real teacher, a real student) every file
+  above builds on, plus `linkParent` for tests that need a guardian too,
+  so no spec file re-derives that chain by hand.
 
 Plus one fast unit test, `src/modules/fees/payment-gateway.util.spec.ts`,
 for the mock payment gateway's HMAC sign/verify — a pure function with no
 reason to need a database.
+
+Not yet covered: the Platform module (Super Admin onboarding schools and
+plans) — exercised indirectly as test setup in several specs above, but
+with no spec of its own.
