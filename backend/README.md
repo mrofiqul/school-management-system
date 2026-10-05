@@ -189,6 +189,25 @@ ever stored):
 
 Access tokens are unchanged — still stateless 15-minute JWTs.
 
+### Round 5 — found while writing Attendance/Exams e2e tests (2026-10-05)
+
+**`AttendanceService.list()` let a Student see every student's attendance
+at the school.** `GET /attendance` requires `studentId` for the PARENT
+role but not STUDENT — and when `studentId` is omitted, the Prisma
+query had `studentId: filters.studentId` (`undefined`), which Prisma
+treats as "no filter," not "match nothing." The controller's own comment
+called the STUDENT-on-this-route addition "safe... given
+`assertCanAccessStudent` already enforces it's their own record" — true
+only when a `studentId` is actually present for that check to run
+against. The route's RolesGuard check (STUDENT allowed) and the
+service's ownership check (only runs if `studentId` is truthy) each
+looked fine in isolation; only a test that calls the route the way a
+Student client actually would — no query params — caught the gap
+between them. Fixed by requiring `studentId` for STUDENT the same way
+it already was for PARENT. Covered by
+`test/attendance.e2e-spec.ts`, "a student omitting studentId does not
+get every student's attendance back."
+
 ## Known gaps before production
 
 See `docs/specification.html` §08 for the full list. Most relevant to this
@@ -202,9 +221,9 @@ code specifically:
   not implemented — `TimetableService.create` will happily create
   overlapping slots. Flagged in `dto/update-timetable-slot.dto.ts`.
 - Automated coverage is a start, not comprehensive — see "Testing" below.
-  Auth, tenant isolation, and the Round 1 students regression are locked
-  in; Attendance, Exams, Fees, and Communication are still only verified
-  by hand (see the "Status" section above).
+  Auth, tenant isolation, Students, Attendance, and Exams are locked in;
+  Fees and Communication are still only verified by hand (see the
+  "Status" section above).
 
 ## Testing
 
@@ -230,7 +249,7 @@ needs resetting by hand; tests that create their own data (new schools,
 students) use a random suffix per run so reruns never collide on a
 unique constraint.
 
-What's covered, and why these three first:
+What's covered:
 
 - **`test/auth.e2e-spec.ts`** — login, `/auth/me`, and the refresh-token
   rotation added just before this (login → refresh → refresh, replaying
@@ -244,8 +263,19 @@ What's covered, and why these three first:
   query behaving wrong against a real database.
 - **`test/students.e2e-spec.ts`** — regression test for the Round 1 bug
   where an unsectioned student silently vanished from `GET /students`.
-  Exists so a future refactor of that query can't quietly reintroduce
-  the same null-relation trap.
+- **`test/attendance.e2e-spec.ts`** — the full roster → mark → read →
+  correct → summarize chain, plus the roster-membership check, the
+  TEACHER-only role gate, and the Round 5 bug this test suite found:
+  `GET /attendance` with no `studentId` used to return every student's
+  attendance to any Student who asked.
+- **`test/exams.e2e-spec.ts`** — schedule → enter marks → re-enter
+  (update, not duplicate) → report card percentage, the `maxMarks` and
+  roster-membership validations, and the same ownership check
+  (`assertCanAccessStudent`) applied at a different call site
+  (`reportCard`) than the one Attendance exercises.
+- **`test/classroom-fixture.ts`** isn't a spec — it's the shared setup
+  (class, section, subject, a real teacher, a real student) both of the
+  above build on, so neither file re-derives that chain by hand.
 
 Plus one fast unit test, `src/modules/fees/payment-gateway.util.spec.ts`,
 for the mock payment gateway's HMAC sign/verify — a pure function with no

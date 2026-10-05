@@ -65,8 +65,13 @@ export class AttendanceService {
     user: AuthenticatedUser,
     filters: { sectionId?: string; studentId?: string; from?: string; to?: string },
   ) {
-    if (user.role === 'PARENT' && !filters.studentId) {
-      throw new BadRequestException('studentId is required for the parent role');
+    // Required for PARENT and STUDENT alike: omitting studentId leaves
+    // `studentId: undefined` in the Prisma where-clause below, which Prisma
+    // treats as "no filter" rather than "no match" — without this check, a
+    // Student hitting GET /attendance with no query params would get back
+    // every student's attendance at the school, not just their own.
+    if ((user.role === 'PARENT' || user.role === 'STUDENT') && !filters.studentId) {
+      throw new BadRequestException('studentId is required for the parent/student role');
     }
     if (filters.studentId) {
       await assertCanAccessStudent(this.prisma, user, filters.studentId);
