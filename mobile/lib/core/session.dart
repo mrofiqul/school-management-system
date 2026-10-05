@@ -94,6 +94,14 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    if (refreshToken != null) {
+      try {
+        await api.post('/auth/logout', body: {'refreshToken': refreshToken}, withAuth: false);
+      } catch (_) {
+        // Best-effort: the token still expires server-side on its own TTL
+        // even if this call fails (e.g. offline logout).
+      }
+    }
     accessToken = null;
     refreshToken = null;
     user = null;

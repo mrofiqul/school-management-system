@@ -166,13 +166,34 @@ drop the dev database, delete `prisma/migrations/`, and regenerate a
 single consolidated `init` migration — not something to do casually once
 real data exists.
 
+### Round 4 — refresh-token rotation (2026-10-05)
+
+Refresh tokens were stateless JWTs: valid for 30 days with no way to
+revoke one early, and no detection if a stolen token got used. Replaced
+with opaque, DB-backed tokens (`RefreshToken` model, only a SHA-256 hash
+ever stored):
+
+- Every `/auth/refresh` call is single-use — the presented token is
+  revoked and a new access/refresh pair is issued in the same "family"
+  (traced back to the original login via `familyId`).
+- Presenting an already-revoked token — only possible if a stolen token
+  is replayed after the legitimate client already rotated past it —
+  revokes every other live token in that family, logging out both the
+  thief and the legitimate client. Verified by hand: rotating
+  login → refresh → refresh, then replaying the *first* token correctly
+  failed, and the *last, still-unused* token was also revoked as a
+  result.
+- Added `POST /auth/logout` to revoke a session's token family on
+  demand; the Flutter app now calls it (best-effort) when the user logs
+  out, instead of only clearing local storage.
+
+Access tokens are unchanged — still stateless 15-minute JWTs.
+
 ## Known gaps before production
 
 See `docs/specification.html` §08 for the full list. Most relevant to this
 code specifically:
 
-- Refresh tokens are stateless JWTs with no revocation — see the comment on
-  `AuthService.refresh()`.
 - The payment gateway is a mock (`payment-gateway.util.ts`): a fake
   checkout URL and an HMAC signature scheme standing in for SSLCommerz's
   real callback verification. Swap both halves together once sandbox

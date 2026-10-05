@@ -1,3 +1,4 @@
+import { randomBytes, randomUUID, createHash } from 'crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -7,6 +8,19 @@ import { JwtPayload } from '../../common/types/jwt-payload.interface';
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
+}
+
+function hashToken(raw: string): string {
+  return createHash('sha256').update(raw).digest('hex');
+}
+
+function refreshTtlMs(): number {
+  const raw = process.env.JWT_REFRESH_TTL ?? '30d';
+  const match = /^(\d+)([dhm])$/.exec(raw);
+  if (!match) return 30 * 24 * 60 * 60 * 1000;
+  const n = Number(match[1]);
+  const unitMs = { d: 24 * 60 * 60 * 1000, h: 60 * 60 * 1000, m: 60 * 1000 }[match[2] as 'd' | 'h' | 'm'];
+  return n * unitMs;
 }
 
 @Injectable()
@@ -27,47 +41,81 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return this.issueTokens({ sub: user.id, schoolId: user.schoolId, role: user.role });
+    return this.issueTokens(user.id, { sub: user.id, schoolId: user.schoolId, role: user.role }, randomUUID());
   }
 
   /**
-   * Re-issues an access token from a valid refresh token.
-   *
-   * NOTE — scaffold limitation: refresh tokens are stateless JWTs, not
-   * tracked in the database, so there is no way to revoke one before it
-   * expires (e.g. on logout from another device, or a suspended account).
-   * Before production, swap this for a stored, rotating refresh-token
-   * record — see docs/specification.html §08, "Rate limiting" / security row.
+   * Rotates a refresh token: the presented token is single-use. Each call
+   * revokes it and issues a new access/refresh pair in the same "family"
+   * (familyId traces back to the original login). Presenting a token that
+   * was already revoked — i.e. one that was already rotated past, which
+   * only happens if a stolen token is replayed after the legitimate client
+   * moved on — revokes every other token in that family, logging out
+   * whoever holds any of them.
    */
-  async refresh(refreshToken: string): Promise<TokenPair> {
-    let payload: JwtPayload;
-    try {
-      payload = await this.jwt.verifyAsync<JwtPayload>(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret-change-me',
-      });
-    } catch {
+  async refresh(rawToken: string): Promise<TokenPair> {
+    const tokenHash = hashToken(rawToken);
+    const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
+    if (!stored) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (stored.revokedAt) {
+      await this.prisma.refreshToken.updateMany({
+        where: { familyId: stored.familyId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException('Refresh token already used — session revoked');
+    }
+
+    if (stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: stored.userId } });
     if (!user || user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    return this.issueTokens({ sub: user.id, schoolId: user.schoolId, role: user.role });
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.issueTokens(
+      user.id,
+      { sub: user.id, schoolId: user.schoolId, role: user.role },
+      stored.familyId,
+    );
   }
 
-  private async issueTokens(payload: JwtPayload): Promise<TokenPair> {
-    const [accessToken, refreshToken] = await Promise.all([
+  /** Revokes every live token in the presented token's family (logs out that session). */
+  async logout(rawToken: string): Promise<void> {
+    const tokenHash = hashToken(rawToken);
+    const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
+    if (!stored) return;
+    await this.prisma.refreshToken.updateMany({
+      where: { familyId: stored.familyId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private async issueTokens(userId: string, payload: JwtPayload, familyId: string): Promise<TokenPair> {
+    const rawRefreshToken = randomBytes(48).toString('base64url');
+    const [accessToken] = await Promise.all([
       this.jwt.signAsync(payload, {
         secret: process.env.JWT_ACCESS_SECRET ?? 'dev-secret-change-me',
         expiresIn: process.env.JWT_ACCESS_TTL ?? '15m',
       }),
-      this.jwt.signAsync(payload, {
-        secret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret-change-me',
-        expiresIn: process.env.JWT_REFRESH_TTL ?? '30d',
+      this.prisma.refreshToken.create({
+        data: {
+          userId,
+          familyId,
+          tokenHash: hashToken(rawRefreshToken),
+          expiresAt: new Date(Date.now() + refreshTtlMs()),
+        },
       }),
     ]);
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken: rawRefreshToken };
   }
 }

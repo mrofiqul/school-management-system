@@ -25,6 +25,12 @@ export class AuthController {
     return this.authService.refresh(dto.refreshToken);
   }
 
+  @Post('logout')
+  async logout(@Body() dto: RefreshDto) {
+    await this.authService.logout(dto.refreshToken);
+    return { data: { ok: true } };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async me(@CurrentUser() current: AuthenticatedUser) {

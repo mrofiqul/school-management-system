@@ -152,9 +152,12 @@ bug #3 in Round 1.
   frequency actions per the spec). Posting assignments, grading
   submissions, and building the timetable itself stay Admin/web-only for
   now.
-- No refresh-token rotation on 401 — a call made after the 15-minute
-  access token expires fails rather than silently retrying through
-  `/auth/refresh`.
+- No auto-retry on 401 — a call made after the 15-minute access token
+  expires fails rather than silently refreshing and retrying. The
+  backend now supports rotating, revocable refresh tokens (see
+  `backend/README.md`, "Round 4") and `Session.logout()` calls
+  `/auth/logout` to revoke them, but `ApiClient` doesn't yet call
+  `/auth/refresh` itself on a 401 — the user just has to log back in.
 - `ApiClient`'s host resolution has no path for a physical device on the
   same LAN (only emulator vs. web/desktop).
 - No automated widget/integration tests beyond the one smoke test in
