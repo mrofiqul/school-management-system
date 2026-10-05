@@ -113,7 +113,8 @@ this one.
 **What this means in practice:** the deployed site is real and correctly
 built, but it cannot ever show live data while the backend stays on
 plain `localhost` HTTP — not for you, not for anyone. The only way
-past this is giving the backend a real, public home (ideally HTTPS).
+past this is giving the backend a real, public home (ideally HTTPS) —
+in progress, see `../backend/README.md`, "Deploying to Render."
 Once that exists, change the one `API_BASE` line at the top of each
 file's `<script>` to that URL and re-upload — nothing else in either
 app needs to change.
