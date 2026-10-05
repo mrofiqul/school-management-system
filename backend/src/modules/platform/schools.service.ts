@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Role, SchoolStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -21,10 +21,15 @@ export class SchoolsService {
   }
 
   async findOne(id: string) {
-    const school = await this.prisma.school.findUniqueOrThrow({
+    // findUnique + a manual check, not findUniqueOrThrow — that throws a raw
+    // Prisma NotFoundError straight past Nest's exception filters as an
+    // uncaught 500, instead of the clean 404 every other "not found" in this
+    // API returns (see e.g. ClassesService.create's academic-year check).
+    const school = await this.prisma.school.findUnique({
       where: { id },
       include: { plan: true, _count: { select: { users: true } } },
     });
+    if (!school) throw new NotFoundException('School not found');
     return { data: school };
   }
 
@@ -59,6 +64,9 @@ export class SchoolsService {
   }
 
   async updateStatus(id: string, status: SchoolStatus) {
+    const existing = await this.prisma.school.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('School not found');
+
     const school = await this.prisma.school.update({ where: { id }, data: { status } });
     return { data: school };
   }

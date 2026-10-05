@@ -208,6 +208,32 @@ it already was for PARENT. Covered by
 `test/attendance.e2e-spec.ts`, "a student omitting studentId does not
 get every student's attendance back."
 
+### Round 6 — found while writing Platform e2e tests (2026-10-05)
+
+Two bugs, both in code that had never been exercised by an actual
+"suspend a school" or "look up a school that doesn't exist" test before:
+
+1. **Suspending a school was cosmetic.** The Owner Console's
+   Suspend/Reactivate action (`admin-web/README.md` says it was
+   "verified both directions" — but only that the status flipped and the
+   UI reflected it) never actually cut anyone off: nothing in the auth
+   flow checked `School.status`, so a suspended school's Admin, Teachers,
+   Students, and Parents could all still log in and use every endpoint
+   exactly as before. Fixed by gating `AuthService.login` and
+   `AuthService.refresh` on `School.status !== 'SUSPENDED'` — the same
+   two checkpoints that already gate on `User.status`. A refresh token
+   issued *before* the suspension stops working too, not just new
+   logins; TRIAL is unaffected (it's a normal, allowed state). Super
+   Admins (no `schoolId`) never go through this check. Covered by
+   `test/platform.e2e-spec.ts`, "suspending a school blocks its users'
+   login and token refresh — reactivating restores both."
+2. **`GET /platform/schools/:id` for a missing id returned a raw 500,
+   not a 404.** `SchoolsService.findOne` used `findUniqueOrThrow`, which
+   throws a Prisma `NotFoundError` straight past Nest's exception
+   filters — every other "not found" in this API instead does a find +
+   null check + `NotFoundException`. `updateStatus` had the identical
+   issue (a bare `.update()` on a missing id). Fixed both the same way.
+
 ## Known gaps before production
 
 See `docs/specification.html` §08 for the full list. Most relevant to this
@@ -220,8 +246,8 @@ code specifically:
 - Timetable conflict detection (same teacher or section double-booked) is
   not implemented — `TimetableService.create` will happily create
   overlapping slots. Flagged in `dto/update-timetable-slot.dto.ts`.
-- Automated coverage now spans every resource group except Platform
-  (Super Admin schools/plans) — see "Testing" below.
+- Automated coverage now spans every resource group — see "Testing"
+  below.
 
 ## Testing
 
@@ -282,15 +308,18 @@ What's covered:
   messaging including a thread filter, a cross-school message being
   rejected, and every role gate (STUDENT can't post a notice or send a
   message).
+- **`test/platform.e2e-spec.ts`** — plans list/create, school onboarding
+  (and that the Admin created alongside it can immediately log in), the
+  status filter on the schools list, every Super-Admin-only route gate,
+  and the two Round 6 bugs this suite found: suspending a school used to
+  be purely cosmetic (didn't block login or token refresh), and looking
+  up a missing school id returned a raw 500 instead of a 404.
 - **`test/classroom-fixture.ts`** isn't a spec — it's the shared setup
   (class, section, subject, a real teacher, a real student) every file
-  above builds on, plus `linkParent` for tests that need a guardian too,
-  so no spec file re-derives that chain by hand.
+  above builds on, plus `linkParent` and `onboardSchool` for tests that
+  need a guardian or a second school, so no spec file re-derives those
+  chains by hand.
 
 Plus one fast unit test, `src/modules/fees/payment-gateway.util.spec.ts`,
 for the mock payment gateway's HMAC sign/verify — a pure function with no
 reason to need a database.
-
-Not yet covered: the Platform module (Super Admin onboarding schools and
-plans) — exercised indirectly as test setup in several specs above, but
-with no spec of its own.

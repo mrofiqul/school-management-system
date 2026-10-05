@@ -41,6 +41,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (await this.belongsToSuspendedSchool(user.schoolId)) {
+      throw new UnauthorizedException("This school's account is suspended — contact the platform owner");
+    }
+
     return this.issueTokens(user.id, { sub: user.id, schoolId: user.schoolId, role: user.role }, randomUUID());
   }
 
@@ -77,6 +81,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
+    if (await this.belongsToSuspendedSchool(user.schoolId)) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
     await this.prisma.refreshToken.update({
       where: { id: stored.id },
       data: { revokedAt: new Date() },
@@ -98,6 +106,19 @@ export class AuthService {
       where: { familyId: stored.familyId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+  }
+
+  /**
+   * A Super Admin has no schoolId, so never gates on this. Suspending a
+   * school (Platform API Table 01) was otherwise cosmetic — nothing ever
+   * checked `School.status`, so a suspended school's own Admin, Teachers,
+   * Students, and Parents could still log in and use every endpoint.
+   * TRIAL is a normal, allowed state; only SUSPENDED blocks.
+   */
+  private async belongsToSuspendedSchool(schoolId: string | null): Promise<boolean> {
+    if (!schoolId) return false;
+    const school = await this.prisma.school.findUnique({ where: { id: schoolId } });
+    return school?.status === 'SUSPENDED';
   }
 
   private async issueTokens(userId: string, payload: JwtPayload, familyId: string): Promise<TokenPair> {

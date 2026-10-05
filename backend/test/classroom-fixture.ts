@@ -7,6 +7,36 @@ export async function login(app: INestApplication, email: string, password: stri
   return res.body.accessToken;
 }
 
+// Created by prisma/seed.ts — the Basic plan, always present in the test DB.
+export const SEEDED_PLAN_ID = '11111111-1111-4111-8111-111111111111';
+
+export interface OnboardedSchool {
+  schoolId: string;
+  adminEmail: string;
+  adminToken: string;
+  suffix: string;
+}
+
+/** Onboards a school (as the Super Admin) and logs in as its newly-created Admin. */
+export async function onboardSchool(app: INestApplication, superAdminToken: string): Promise<OnboardedSchool> {
+  const suffix = randomUUID();
+  const adminEmail = `admin-${suffix}@fixture.example`;
+  const res = await request(app.getHttpServer())
+    .post('/v1/platform/schools')
+    .set('Authorization', `Bearer ${superAdminToken}`)
+    .send({
+      name: `Test School ${suffix}`,
+      planId: SEEDED_PLAN_ID,
+      adminName: 'Test Admin',
+      adminEmail,
+      adminPassword: 'ChangeMe123!',
+    })
+    .expect(201);
+
+  const adminToken = await login(app, adminEmail, 'ChangeMe123!');
+  return { schoolId: res.body.data.id as string, adminEmail, adminToken, suffix };
+}
+
 export interface ClassroomFixture {
   suffix: string;
   academicYearId: string;

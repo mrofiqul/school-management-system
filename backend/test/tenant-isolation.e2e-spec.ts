@@ -1,35 +1,11 @@
-import { randomUUID } from 'crypto';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { bootstrapTestApp } from './bootstrap-app';
+import { login, onboardSchool } from './classroom-fixture';
 
 // Seeded by prisma/seed.ts.
 const SUPER_ADMIN_EMAIL = 'owner@campus.app';
 const SUPER_ADMIN_PASSWORD = 'ChangeMe123!';
-const SEEDED_PLAN_ID = '11111111-1111-4111-8111-111111111111';
-
-async function login(app: INestApplication, email: string, password: string): Promise<string> {
-  const res = await request(app.getHttpServer()).post('/v1/auth/login').send({ email, password }).expect(201);
-  return res.body.accessToken;
-}
-
-async function onboardSchool(app: INestApplication, superAdminToken: string) {
-  const suffix = randomUUID();
-  const res = await request(app.getHttpServer())
-    .post('/v1/platform/schools')
-    .set('Authorization', `Bearer ${superAdminToken}`)
-    .send({
-      name: `Test School ${suffix}`,
-      planId: SEEDED_PLAN_ID,
-      adminName: 'Test Admin',
-      adminEmail: `admin-${suffix}@isolation-test.example`,
-      adminPassword: 'ChangeMe123!',
-    })
-    .expect(201);
-
-  const adminToken = await login(app, `admin-${suffix}@isolation-test.example`, 'ChangeMe123!');
-  return { schoolId: res.body.data.id as string, adminToken, suffix };
-}
 
 async function createClass(app: INestApplication, adminToken: string, className: string) {
   const year = await request(app.getHttpServer())
