@@ -201,9 +201,52 @@ code specifically:
 - Timetable conflict detection (same teacher or section double-booked) is
   not implemented — `TimetableService.create` will happily create
   overlapping slots. Flagged in `dto/update-timetable-slot.dto.ts`.
-- No automated tests yet (`npm run test` / `test:e2e` scripts exist but no
-  specs have been written) — everything above was verified by hand, first
-  with curl, then with PowerShell's `Invoke-RestMethod` after this
-  environment's Bash shell lost the ability to reach `localhost` following
-  a session restart (PowerShell could still reach it fine — a shell
-  quirk, not a server issue).
+- Automated coverage is a start, not comprehensive — see "Testing" below.
+  Auth, tenant isolation, and the Round 1 students regression are locked
+  in; Attendance, Exams, Fees, and Communication are still only verified
+  by hand (see the "Status" section above).
+
+## Testing
+
+```bash
+npm test          # unit tests — fast, no database (src/**/*.spec.ts)
+npm run test:e2e  # integration tests against a real Postgres database
+```
+
+`test:e2e` needs its own database so it never touches dev data or the
+seeded dev accounts — it reads `.env.test` (committed; no real secrets,
+see the comment in that file) instead of `.env`, pointing at a second
+database, `campus_test`, on the same local cluster as dev (see "Local
+dev database" above). Create it once:
+
+```bash
+createdb -h localhost -p 5433 -U campus campus_test
+```
+
+Every `test:e2e` run then applies all migrations and the seed script
+against it from scratch (`test/global-setup.ts` — `prisma migrate
+deploy` + `prisma/seed.ts`), so it's safe to run repeatedly and never
+needs resetting by hand; tests that create their own data (new schools,
+students) use a random suffix per run so reruns never collide on a
+unique constraint.
+
+What's covered, and why these three first:
+
+- **`test/auth.e2e-spec.ts`** — login, `/auth/me`, and the refresh-token
+  rotation added just before this (login → refresh → refresh, replaying
+  a stale token, logout) — the newest and least-manually-re-checked code
+  in the API.
+- **`test/tenant-isolation.e2e-spec.ts`** — onboards two real schools and
+  confirms one's Admin never sees the other's classes. This is, per the
+  "Status" section above, "the one guarantee the whole architecture
+  rests on" — worth protecting with a test that can't be satisfied by
+  mocking Prisma, since every bug found so far in this area was a real
+  query behaving wrong against a real database.
+- **`test/students.e2e-spec.ts`** — regression test for the Round 1 bug
+  where an unsectioned student silently vanished from `GET /students`.
+  Exists so a future refactor of that query can't quietly reintroduce
+  the same null-relation trap.
+
+Plus one fast unit test, `src/modules/fees/payment-gateway.util.spec.ts`,
+for the mock payment gateway's HMAC sign/verify — a pure function with no
+reason to need a database.

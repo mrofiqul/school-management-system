@@ -12,6 +12,7 @@ build/
 .env
 .env.*
 !.env.example
+!backend/.env.test
 
 # Prisma
 backend/prisma/migrations/dev.db
