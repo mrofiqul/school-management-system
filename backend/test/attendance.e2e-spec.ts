@@ -157,7 +157,7 @@ describe('Attendance (e2e)', () => {
   it('a student can never read another student\'s attendance summary', async () => {
     const fx = await buildClassroomFixture(app, adminToken);
     const intruderSuffix = randomUUID();
-    const intruder = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/v1/students')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
