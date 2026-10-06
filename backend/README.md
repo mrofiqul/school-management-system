@@ -234,6 +234,27 @@ Two bugs, both in code that had never been exercised by an actual
    null check + `NotFoundException`. `updateStatus` had the identical
    issue (a bare `.update()` on a missing id). Fixed both the same way.
 
+### Round 7 — closed the timetable conflict-detection gap (2026-10-06)
+
+`TimetableService.create()` happily created overlapping slots — flagged
+as a known gap since Round 2, never actually implemented. Closed it:
+
+- A new slot is rejected (`409 Conflict`) if it overlaps another slot in
+  the *same section* at the same day/time — a section can't be in two
+  places at once.
+- It's also rejected if it overlaps another slot taught by the *same
+  teacher* in a *different* section — checked separately from the
+  section check above, so the error message says which kind of conflict
+  it actually is, not just "conflict."
+- `endsAt <= startsAt` is now rejected (`400`) too — never validated
+  before, and a zero/negative-duration slot is nonsensical regardless
+  of conflicts.
+
+`TimetableService.update()` still only touches `room` — day/time/
+class-subject changes go through delete + re-create, which already
+routes back through `create()`'s new check, so there's nothing separate
+to maintain there. Covered by `test/timetable.e2e-spec.ts`.
+
 ## Known gaps before production
 
 See `docs/specification.html` §08 for the full list. Most relevant to this
@@ -243,9 +264,6 @@ code specifically:
   checkout URL and an HMAC signature scheme standing in for SSLCommerz's
   real callback verification. Swap both halves together once sandbox
   credentials exist.
-- Timetable conflict detection (same teacher or section double-booked) is
-  not implemented — `TimetableService.create` will happily create
-  overlapping slots. Flagged in `dto/update-timetable-slot.dto.ts`.
 - Automated coverage now spans every resource group — see "Testing"
   below.
 
@@ -314,6 +332,10 @@ What's covered:
   and the two Round 6 bugs this suite found: suspending a school used to
   be purely cosmetic (didn't block login or token refresh), and looking
   up a missing school id returned a raw 500 instead of a 404.
+- **`test/timetable.e2e-spec.ts`** — the Round 7 conflict-detection fix:
+  a non-overlapping slot coexists fine, an overlapping slot in the same
+  section is rejected, double-booking a teacher across two sections is
+  rejected, and `endsAt <= startsAt` is rejected.
 - **`test/classroom-fixture.ts`** isn't a spec — it's the shared setup
   (class, section, subject, a real teacher, a real student) every file
   above builds on, plus `linkParent` and `onboardSchool` for tests that

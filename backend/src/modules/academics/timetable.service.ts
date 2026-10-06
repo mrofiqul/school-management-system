@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTimetableSlotDto } from './dto/create-timetable-slot.dto';
 import { UpdateTimetableSlotDto } from './dto/update-timetable-slot.dto';
@@ -49,13 +49,37 @@ export class TimetableService {
     });
     if (!classSubject) throw new NotFoundException('Class-subject assignment not found');
 
+    const startsAt = timeStringToDate(dto.startsAt);
+    const endsAt = timeStringToDate(dto.endsAt);
+    if (endsAt <= startsAt) throw new BadRequestException('endsAt must be after startsAt');
+
+    // Two kinds of double-booking: the section is in two places at once, or
+    // the teacher is. Checked separately (not one combined query) so the
+    // error names which one it actually is — previously neither was caught
+    // at all, see backend/README.md's known-gaps history.
+    const overlapWindow = { dayOfWeek: dto.dayOfWeek, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } };
+
+    const sectionConflict = await this.prisma.timetableSlot.findFirst({
+      where: { ...overlapWindow, sectionId },
+    });
+    if (sectionConflict) {
+      throw new ConflictException('This section already has a class scheduled at an overlapping time');
+    }
+
+    const teacherConflict = await this.prisma.timetableSlot.findFirst({
+      where: { ...overlapWindow, classSubject: { teacherId: classSubject.teacherId } },
+    });
+    if (teacherConflict) {
+      throw new ConflictException('This teacher is already teaching another section at an overlapping time');
+    }
+
     const slot = await this.prisma.timetableSlot.create({
       data: {
         sectionId,
         classSubjectId: dto.classSubjectId,
         dayOfWeek: dto.dayOfWeek,
-        startsAt: timeStringToDate(dto.startsAt),
-        endsAt: timeStringToDate(dto.endsAt),
+        startsAt,
+        endsAt,
         room: dto.room,
       },
     });
