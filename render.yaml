@@ -8,7 +8,11 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npm run build && npx prisma generate
+    # --include=dev: NODE_ENV=production below (needed so Nest itself runs
+    # in production mode) also makes a plain `npm install` skip
+    # devDependencies by default — but @nestjs/cli (the `nest` build
+    # command) lives there, so the build step needs them forced back on.
+    buildCommand: npm install --include=dev && npm run build && npx prisma generate
     startCommand: npx prisma migrate deploy && npm run start:prod
     healthCheckPath: /v1/health
     autoDeploy: true
