@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/campus_user.dart';
@@ -16,7 +17,19 @@ class ChildRef {
 /// Figure 1: this is the in-memory form of that role+children role check.
 class Session extends ChangeNotifier {
   final ApiClient api;
-  Session(this.api);
+  Session(this.api) {
+    // Wires ApiClient's silent-refresh hooks to this session: a successful
+    // refresh updates and persists the new pair; a refresh ApiClient
+    // couldn't recover from (the refresh token itself was rejected) logs
+    // the user out, the same as any other expired-session failure.
+    api.onTokensRefreshed = (access, refresh) {
+      accessToken = access;
+      refreshToken = refresh;
+      unawaited(_persist());
+      notifyListeners();
+    };
+    api.onRefreshFailed = logout;
+  }
 
   String? accessToken;
   String? refreshToken;
@@ -39,6 +52,7 @@ class Session extends ChangeNotifier {
     accessToken = data['accessToken'];
     refreshToken = data['refreshToken'];
     api.setToken(accessToken);
+    api.setRefreshToken(refreshToken);
 
     final me = await api.get('/auth/me');
     user = CampusUser.fromJson(me);
@@ -77,6 +91,7 @@ class Session extends ChangeNotifier {
     accessToken = token;
     refreshToken = prefs.getString('refreshToken');
     api.setToken(accessToken);
+    api.setRefreshToken(refreshToken);
     try {
       final me = await api.get('/auth/me');
       user = CampusUser.fromJson(me);
@@ -108,6 +123,7 @@ class Session extends ChangeNotifier {
     children = [];
     activeChildId = null;
     api.setToken(null);
+    api.setRefreshToken(null);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');

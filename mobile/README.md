@@ -78,8 +78,17 @@ Android only needs two things already in place in this repo:
 `ApiClient` resolves the host per platform (`lib/core/api_client.dart`):
 Android emulators can't reach the host machine via `localhost` — they
 need the special `10.0.2.2` alias — so that's the default there; web and
-desktop really do mean `localhost`. A physical device needs the host
-machine's LAN IP instead; that's not handled yet (see Known gaps).
+desktop really do mean `localhost`. A physical device on the same LAN
+needs neither — it needs the host machine's own LAN IP, which only the
+developer running the build knows, so it's a build-time override instead
+of something `ApiClient` could guess:
+
+```bash
+flutter run --dart-define=API_HOST=192.168.1.50   # your dev machine's LAN IP
+```
+
+Leave `--dart-define` off for the emulator/web/desktop cases above —
+the override only takes effect when given.
 
 ## Bugs and environment issues found by actually running this
 
@@ -146,20 +155,38 @@ section at a time) — safe as a *required*-style filter here, unlike the
 has no class, so excluding them is correct, not the null-FK trap from
 bug #3 in Round 1.
 
+### Round 3 — closed two client-side gaps (2026-10-06/08)
+
+1. **No auto-retry on 401.** The backend has had rotating, revocable
+   refresh tokens since `backend/README.md`'s "Round 4," but `ApiClient`
+   never called `/auth/refresh` itself — a call made after the 15-minute
+   access token expired just failed, logging the user out mid-session for
+   no real reason. Fixed: `ApiClient._request` now retries once through a
+   silent refresh on any authenticated 401 (never on `/auth/*` calls
+   themselves, so a genuinely wrong login doesn't loop). Concurrent 401s
+   share one in-flight refresh rather than racing — the backend's
+   rotation is single-use, so two parallel refresh attempts would make
+   the second one fail. `Session` wires `onTokensRefreshed` (persist the
+   new pair) and `onRefreshFailed` (log out — the refresh token itself
+   was rejected, not just a network blip). Verified live, not just by
+   code review: set `JWT_ACCESS_TTL=5s` on the backend, logged in, waited
+   out the token, then navigated — the report card loaded with real data
+   and no logout, with a confirmed `/v1/auth/refresh` call in the backend
+   log.
+2. **No path for a physical device on the same LAN.** `ApiClient`'s host
+   resolution only ever covered emulator/web/desktop. Added a build-time
+   override — `flutter run --dart-define=API_HOST=192.168.x.x` — since
+   the dev machine's LAN IP isn't something the app could guess at
+   runtime. Covered by `test/api_client_host_test.dart`, run both with
+   and without the override.
+
 ## Known gaps before production
 
 - Teacher screens cover Attendance and Marks only (the two highest-
   frequency actions per the spec). Posting assignments, grading
   submissions, and building the timetable itself stay Admin/web-only for
   now.
-- No auto-retry on 401 — a call made after the 15-minute access token
-  expires fails rather than silently refreshing and retrying. The
-  backend now supports rotating, revocable refresh tokens (see
-  `backend/README.md`, "Round 4") and `Session.logout()` calls
-  `/auth/logout` to revoke them, but `ApiClient` doesn't yet call
-  `/auth/refresh` itself on a 401 — the user just has to log back in.
-- `ApiClient`'s host resolution has no path for a physical device on the
-  same LAN (only emulator vs. web/desktop).
-- No automated widget/integration tests beyond the one smoke test in
-  `test/widget_test.dart` — everything above was verified by hand, with
-  real taps on a real emulator against the real backend.
+- No automated widget/integration tests beyond the smoke test in
+  `test/widget_test.dart` and the host-resolution test in
+  `test/api_client_host_test.dart` — everything else above was verified
+  by hand, with real taps on a real emulator against the real backend.
