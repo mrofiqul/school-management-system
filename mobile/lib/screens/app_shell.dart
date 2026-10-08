@@ -9,12 +9,14 @@ import 'profile_tab.dart';
 import 'teacher/teacher_home_tab.dart';
 import 'teacher/teacher_attendance_tab.dart';
 import 'teacher/teacher_marks_tab.dart';
+import 'teacher/teacher_assignments_tab.dart';
 
 /// Campus App Flow Figure 0: the nav bar itself is role-conditional, not
 /// just its content. Three distinct shapes, one per role:
 ///   Student  — Home · Academics · Fees · Profile              (4 tabs)
 ///   Parent   — Home · Academics · Fees · Messages · Profile   (5 tabs)
-///   Teacher  — Home · Attendance · Marks · Messages · Profile (5 tabs)
+///   Teacher  — Home · Attendance · Marks · Assignments · Messages ·
+///              Profile                                       (6 tabs)
 /// matching exactly what each role's token is allowed to call on the
 /// backend — a Student token is never accepted on /messages, a Teacher
 /// has no /invoices access at all, and so on.
@@ -40,6 +42,7 @@ class _AppShellState extends State<AppShell> {
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.fact_check_outlined), selectedIcon: Icon(Icons.fact_check), label: 'Attendance'),
         NavigationDestination(icon: Icon(Icons.edit_note_outlined), selectedIcon: Icon(Icons.edit_note), label: 'Marks'),
+        NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Work'),
         NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Messages'),
         NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ];
@@ -47,6 +50,7 @@ class _AppShellState extends State<AppShell> {
         TeacherHomeTab(),
         TeacherAttendanceTab(),
         TeacherMarksTab(),
+        TeacherAssignmentsTab(),
         MessagesTab(),
         ProfileTab(),
       ];

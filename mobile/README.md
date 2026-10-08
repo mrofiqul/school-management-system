@@ -40,6 +40,18 @@ just compiled:
   highest/lowest recompute live, pre-fills existing marks from a new
   `GET /exam-schedules/:id/marks` read endpoint; verified editing an
   existing mark (91→65, badge flipped A+→A- live) and saving it back
+- **Teacher Work (Assignments)** (2026-10-08) — list of the teacher's own
+  class-subjects deduped from `/timetable/mine` (assignments are posted
+  once per class-subject, not per section); drill into one to see
+  existing assignments and post a new one (title, a Material date picker
+  for the due date, optional attachment URL); drill into an assignment to
+  see its submissions and grade one via a dialog (marks + optional
+  feedback). Verified end-to-end against the real backend, not just
+  compiled: created a class-subject + teacher + timetable slot through
+  the API, posted a real assignment from the app, had a test student
+  submit it through the API, then graded it from the app (88, "Good
+  work, neat handwriting.") and confirmed both fields persisted via a
+  direct API read-back.
 
 Verified by logging in as all three seeded accounts and confirming the
 nav itself differs, not just its content:
@@ -48,7 +60,7 @@ nav itself differs, not just its content:
 |---|---|---|
 | Student (`mahin.guardian@example.com`) | Home · Academics · Fees · Profile (4 tabs, no Messages) | ✅ screenshot |
 | Parent (`rina.ahmed@example.com`) | Home · Academics · Fees · Messages · Profile (5 tabs) | ✅ screenshot |
-| Teacher (`kamal.teacher@scholarsacademy.test`) | Home · Attendance · Marks · Messages · Profile (5 tabs, distinct from Parent's) | ✅ screenshot |
+| Teacher (`kamal.teacher@scholarsacademy.test`) | Home · Attendance · Marks · Work · Messages · Profile (6 tabs, distinct from Parent's) | ✅ screenshot |
 
 ## Prerequisites
 
@@ -182,10 +194,10 @@ bug #3 in Round 1.
 
 ## Known gaps before production
 
-- Teacher screens cover Attendance and Marks only (the two highest-
-  frequency actions per the spec). Posting assignments, grading
-  submissions, and building the timetable itself stay Admin/web-only for
-  now.
+- Teacher screens now cover Attendance, Marks, and Assignments
+  (post/grade). Building the timetable itself stays Admin/web-only —
+  that's a one-time per-term setup task, not a recurring teacher
+  workflow, so it hasn't needed a mobile screen.
 - No automated widget/integration tests beyond the smoke test in
   `test/widget_test.dart` and the host-resolution test in
   `test/api_client_host_test.dart` — everything else above was verified

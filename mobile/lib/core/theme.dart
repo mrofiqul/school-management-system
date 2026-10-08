@@ -92,6 +92,11 @@ class CampusTheme {
           return IconThemeData(color: selected ? Colors.white : CampusColors.inkFaint);
         }),
       ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: CampusColors.accent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: CampusColors.accent,
