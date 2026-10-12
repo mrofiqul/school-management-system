@@ -52,6 +52,9 @@
   .login-card .mark{color:var(--accent); font-size:28px; margin-bottom:6px;}
   .login-card h1{font-family:var(--serif); font-size:22px; margin:0 0 4px;}
   .login-card p{color:var(--ink-soft); font-size:13px; margin:0 0 22px;}
+  .login-footer{display:flex; justify-content:space-between; gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:12px;}
+  .login-footer a{color:var(--ink-soft); text-decoration:none; font-weight:600;}
+  .login-footer a:hover{color:var(--accent);}
   .field{display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
   .field label{font-size:11.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
   .field input, .field select, .field textarea{
@@ -178,8 +181,12 @@
     <p>Super Admin sign-in — platform-wide access.</p>
     <div id="login-error" class="error-box" style="display:none;"></div>
     <div class="field"><label>Email</label><input id="login-email" type="email" value="owner@campus.app"></div>
-    <div class="field"><label>Password</label><input id="login-password" type="password" value="ChangeMe123!"></div>
+    <div class="field"><label>Password</label><input id="login-password" type="password"></div>
     <button class="btn btn-primary" id="login-btn" style="width:100%;">Log in</button>
+    <div class="login-footer">
+      <a href="https://github.com/mrofiqul/school-management-system/releases/download/v1.0.0-android/app-release.apk">&#8595; Download the app</a>
+      <a href="mailto:rafiq.ru.cse@gmail.com?subject=Sign%20up%20my%20school%20for%20Campus">Sign up your school &#8594;</a>
+    </div>
   </div>
 </div>
 
