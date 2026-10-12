@@ -211,6 +211,7 @@
             <div class="rail-user-role">Super Admin</div>
           </div>
         </div>
+        <button class="rail-logout" id="change-password-btn">Change password</button>
         <button class="rail-logout" id="logout-btn">Log out</button>
       </div>
     </aside>
@@ -304,6 +305,21 @@
   </div>
 </div>
 
+<!-- Change password modal -->
+<div class="modal-scrim" id="password-scrim">
+  <div class="modal">
+    <h3>Change password</h3>
+    <div id="password-error" class="error-box" style="display:none;"></div>
+    <div class="field"><label>Current password</label><input id="password-current" type="password"></div>
+    <div class="field"><label>New password</label><input id="password-new" type="password"></div>
+    <div class="field"><label>Confirm new password</label><input id="password-confirm" type="password"></div>
+    <div class="modal-actions">
+      <button class="btn" id="password-cancel">Cancel</button>
+      <button class="btn btn-primary" id="password-submit">Change password</button>
+    </div>
+  </div>
+</div>
+
 <!-- School detail slideover -->
 <div class="scrim" id="scrim"></div>
 <aside class="slideover" id="slideover">
@@ -389,6 +405,40 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   sessionStorage.removeItem("campus_owner_token");
   document.getElementById("app").style.display = "none";
   document.getElementById("login-screen").style.display = "flex";
+});
+
+document.getElementById("change-password-btn").addEventListener("click", () => {
+  document.getElementById("password-error").style.display = "none";
+  document.getElementById("password-current").value = "";
+  document.getElementById("password-new").value = "";
+  document.getElementById("password-confirm").value = "";
+  document.getElementById("password-scrim").classList.add("open");
+});
+document.getElementById("password-cancel").addEventListener("click", () => document.getElementById("password-scrim").classList.remove("open"));
+document.getElementById("password-submit").addEventListener("click", async () => {
+  const currentPassword = document.getElementById("password-current").value;
+  const newPassword = document.getElementById("password-new").value;
+  const confirmPassword = document.getElementById("password-confirm").value;
+  const errEl = document.getElementById("password-error");
+  if (newPassword !== confirmPassword) {
+    errEl.textContent = "New password and confirmation don't match.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (newPassword.length < 8) {
+    errEl.textContent = "New password must be at least 8 characters.";
+    errEl.style.display = "block";
+    return;
+  }
+  try {
+    await api("/auth/change-password", { method: "PATCH", body: { currentPassword, newPassword } });
+    document.getElementById("password-scrim").classList.remove("open");
+    accessToken = null;
+    sessionStorage.removeItem("campus_owner_token");
+    document.getElementById("app").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+    toast("Password changed — log in again with your new password");
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = "block"; }
 });
 
 // ---------- data loading ----------
