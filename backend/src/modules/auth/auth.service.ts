@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID, createHash } from 'crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -95,6 +95,29 @@ export class AuthService {
       { sub: user.id, schoolId: user.schoolId, role: user.role },
       stored.familyId,
     );
+  }
+
+  /**
+   * Requires the current password, not just a valid session — an access
+   * token alone (short-lived as it is) shouldn't be enough to take over an
+   * account from someone who walked away from an unlocked device. Revokes
+   * every refresh token the user holds, so changing the password also logs
+   * out every other session using the old one.
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const matches = await bcrypt.compare(currentPassword, user.password);
+    if (!matches) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { password: hashed } }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
   }
 
   /** Revokes every live token in the presented token's family (logs out that session). */

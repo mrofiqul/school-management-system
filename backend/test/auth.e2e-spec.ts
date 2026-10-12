@@ -103,6 +103,71 @@ describe('Auth (e2e)', () => {
     });
   });
 
+  describe('PATCH /v1/auth/change-password', () => {
+    it('rejects a request with no token', async () => {
+      await request(app.getHttpServer())
+        .patch('/v1/auth/change-password')
+        .send({ currentPassword: ADMIN_PASSWORD, newPassword: 'NewPassword123!' })
+        .expect(401);
+    });
+
+    it('rejects the wrong current password', async () => {
+      const login = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch('/v1/auth/change-password')
+        .set('Authorization', `Bearer ${login.body.accessToken}`)
+        .send({ currentPassword: 'wrong-password', newPassword: 'NewPassword123!' })
+        .expect(400);
+    });
+
+    it('changes the password, logs out other sessions, and the new password logs in', async () => {
+      const login = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
+        .expect(201);
+      const oldRefreshToken = login.body.refreshToken;
+
+      await request(app.getHttpServer())
+        .patch('/v1/auth/change-password')
+        .set('Authorization', `Bearer ${login.body.accessToken}`)
+        .send({ currentPassword: ADMIN_PASSWORD, newPassword: 'NewPassword123!' })
+        .expect(200);
+
+      // The old refresh token (issued before the change) no longer works...
+      await request(app.getHttpServer())
+        .post('/v1/auth/refresh')
+        .send({ refreshToken: oldRefreshToken })
+        .expect(401);
+
+      // ...the old password no longer logs in...
+      await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
+        .expect(401);
+
+      // ...and the new one does, so it's restored to the seeded value for
+      // every other test in this file.
+      await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: ADMIN_EMAIL, password: 'NewPassword123!' })
+        .expect(201);
+
+      const restore = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: ADMIN_EMAIL, password: 'NewPassword123!' })
+        .expect(201);
+      await request(app.getHttpServer())
+        .patch('/v1/auth/change-password')
+        .set('Authorization', `Bearer ${restore.body.accessToken}`)
+        .send({ currentPassword: 'NewPassword123!', newPassword: ADMIN_PASSWORD })
+        .expect(200);
+    });
+  });
+
   describe('POST /v1/auth/logout', () => {
     it('revokes the token so it can no longer be refreshed', async () => {
       const login = await request(app.getHttpServer())
