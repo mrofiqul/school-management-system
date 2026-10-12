@@ -33,7 +33,16 @@ class ApiClient {
     return 'localhost';
   }
 
-  static String get baseUrl => 'http://$_host:3000/v1';
+  /// A full override takes precedence over the host-only one above — the
+  /// published release APK points at the real HTTPS backend
+  /// (`https://campus-api-f8b3.onrender.com/v1`), which doesn't fit the
+  /// `http://host:3000` template built for local dev:
+  /// `flutter build apk --dart-define=API_BASE_URL=https://.../v1`.
+  static String get baseUrl {
+    const overrideUrl = String.fromEnvironment('API_BASE_URL');
+    if (overrideUrl.isNotEmpty) return overrideUrl;
+    return 'http://$_host:3000/v1';
+  }
 
   String? _accessToken;
   String? _refreshToken;
