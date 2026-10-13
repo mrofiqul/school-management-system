@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/app_update.dart';
 import '../core/session.dart';
 import 'home_tab.dart';
 import 'academics_tab.dart';
@@ -29,6 +30,17 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Runs once per app session (AppShell is only ever reached right after
+    // a fresh login or a silent session restore — see splash_screen.dart
+    // and login_screen.dart), not on every rebuild.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) checkForAppUpdate(context, context.read<Session>().api);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
